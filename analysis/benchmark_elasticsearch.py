@@ -8,23 +8,43 @@ from elasticsearch import Elasticsearch
 YEAR_2020 = datetime.datetime(2020, 1, 1, 0, 0, 0)
 
 queries = {
-    "abstract simple": lambda: {"match": {"abstract": "quantum"}},
-    "abstract": lambda: {"match": {"abstract": "machine learning models"}},
-    "abstract simple + year": lambda: {
+    "abstract simple": lambda: {"match": {"abstract": {"query": "quantum"}}},
+    "abstract": lambda: {"match": {"abstract": {"query": "machine learning models"}}},
+    "abstract simple AND year+": lambda: {
         "bool": {
-            "must": [{"match": {"abstract": "quantum"}}],
+            "must": [{"match": {"abstract": {"query": "quantum"}}}],
             "filter": [
                 {"range": {"update_date": {"gte": YEAR_2020.strftime("%Y-%m-%d")}}}
             ],
         },
     },
-    "abstract + year": lambda: {
+    "abstract AND year+": lambda: {
         "bool": {
-            "must": [{"match": {"abstract": "machine learning models"}}],
+            "must": [{"match": {"abstract": {"query": "machine learning models"}}}],
             "filter": [
                 {"range": {"update_date": {"gte": YEAR_2020.strftime("%Y-%m-%d")}}}
             ],
         },
+    },
+    "(submitter OR category) AND year-": lambda: {
+        "bool": {
+            "should": [
+                {"match": {"submitter": {"query": "John"}}},
+                {"match": {"categories": "cs.AI"}},
+            ],
+            "filter": [
+                {"range": {"update_date": {"lte": YEAR_2020.strftime("%Y-%m-%d")}}}
+            ],
+        }
+    },
+    "(abstract OR title) AND category": lambda: {
+        "bool": {
+            "should": [
+                {"match": {"abstract": {"query": "artificial neural network"}}},
+                {"match": {"title": {"query": "deep"}}},
+            ],
+            "filter": [{"match": {"categories": "cs.AI"}}],
+        }
     },
 }
 
@@ -51,7 +71,7 @@ class TaskProcess(Process):
         i = 0
         start = time.perf_counter_ns()
         while i < self.n:
-            self.es.search(index=self.collection, query=self.query(), size=10)
+            self.es.search(index=self.collection, query=self.query(), size=1000)
             i += 1
 
         self.return_dict[self.ident] = time.perf_counter_ns() - start
@@ -74,5 +94,5 @@ if __name__ == "__main__":
     for name, query in queries.items():
         print(name, end=": ")
         for concurrency in [1, 5, 10, 20, 50]:
-            print(f"{benchmark(1000, query, concurrency): 5f}", end=", ")
+            print(f"{benchmark(100, query, concurrency): 5f}", end=", ")
         print()

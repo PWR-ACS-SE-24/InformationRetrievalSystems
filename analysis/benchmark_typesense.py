@@ -4,7 +4,6 @@ import typing as t
 from multiprocessing import Manager, Process
 
 import typesense
-
 from prepare_typesense import unix_time_millis
 
 YEAR_2020 = datetime.datetime(2020, 1, 1, 0, 0, 0)
@@ -14,27 +13,41 @@ queries = {
         "q": "quantum",
         "query_by": "abstract",
         "sort_by": "_text_match:desc",
-        "limit_hits": 0,
+        "limit_hits": 1000,
     },
     "abstract": lambda: {
         "q": "machine learning models",
         "query_by": "abstract",
         "sort_by": "_text_match:desc",
-        "limit_hits": 0,
+        "limit_hits": 1000,
     },
-    "abstract simple + year": lambda: {
+    "abstract simple AND year+": lambda: {
         "q": "quantum",
         "query_by": "abstract",
         "filter_by": f"update_date:>{unix_time_millis(YEAR_2020)}",
         "sort_by": "_text_match:desc",
-        "limit_hits": 0,
+        "limit_hits": 1000,
     },
-    "abstract + year": lambda: {
+    "abstract AND year+": lambda: {
         "q": "machine learning models",
         "query_by": "abstract",
         "filter_by": f"update_date:>{unix_time_millis(YEAR_2020)}",
         "sort_by": "_text_match:desc",
-        "limit_hits": 0,
+        "limit_hits": 1000,
+    },
+    "(submitter OR category) AND year-": lambda: {
+        "q": "John",
+        "query_by": "submitter",
+        "filter_by": f"categories:cs.AI && update_date:<{unix_time_millis(YEAR_2020)}",
+        "sort_by": "_text_match:desc",
+        "limit_hits": 1000,
+    },
+    "(abstract OR title) AND category": lambda: {
+        "q": "artificial neural network",
+        "query_by": "abstract,title",
+        "filter_by": f"(title:`deep`) && categories:cs.AI",
+        "sort_by": "_text_match:desc",
+        "limit_hits": 1000,
     },
 }
 

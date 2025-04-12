@@ -2,9 +2,8 @@ import json
 import time
 
 from elasticsearch import Elasticsearch, helpers
-from tqdm import tqdm
-
 from prepare_typesense import batched, fix_line
+from tqdm import tqdm
 
 index_mapping = {
     "properties": {
@@ -15,7 +14,7 @@ index_mapping = {
         "comments": {"type": "text"},
         "journal-ref": {"type": "text"},
         "doi": {"type": "keyword"},
-        "categories": {"type": "keyword"},
+        "categories": {"type": "keyword"},  # in elastic every field is an array
         "abstract": {"type": "text"},
         "update_date": {"type": "date", "format": "yyyy-MM-dd"},
     }

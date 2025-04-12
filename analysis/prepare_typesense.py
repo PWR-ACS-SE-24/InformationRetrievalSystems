@@ -28,6 +28,8 @@ def batched(iterable, n, *, strict=False):
 def fix_line(line: str) -> dict:
     parsed = json.loads(line)
     parsed["categories"] = parsed["categories"].split(" ")
+    parsed["title"] = parsed["title"].replace("\n", " ")
+    parsed["abstract"] = parsed["abstract"].replace("\n", " ")
 
     return parsed
 
@@ -64,7 +66,7 @@ if __name__ == "__main__":
             {"name": "journal-ref", "type": "string", "index": False, "facet": False},
             {"name": "doi", "type": "string", "index": False, "facet": False},
             {"name": "abstract", "type": "string", "index": True, "facet": False},
-            {"name": "categories", "type": "string*", "index": True, "facet": True},
+            {"name": "categories", "type": "string[]", "index": True, "facet": True},
             {"name": "versions.*", "type": "auto", "index": False, "facet": False},
             {"name": "update_date", "type": "int64", "index": True},
         ],
