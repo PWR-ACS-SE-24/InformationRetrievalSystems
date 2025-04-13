@@ -72,7 +72,8 @@ if __name__ == "__main__":
                 "stem": True,
             },
             {"name": "comments", "type": "string", "index": False, "facet": False},
-            {"name": "journal-ref", "type": "string", "index": False, "facet": False},
+            {"name": "journal-ref", "type": "string",
+                "index": False, "facet": False},
             {"name": "doi", "type": "string", "index": False, "facet": False},
             {
                 "name": "abstract",
@@ -105,7 +106,8 @@ if __name__ == "__main__":
         batch_size = (length // 25) + 1
 
         for chunk in tqdm(batched(file, batch_size)):
-            ts.collections["arxiv"].documents.import_(map(_fix_line_date, chunk))
+            ts.collections["arxiv"].documents.import_(
+                map(_fix_line_date, chunk))
 
             usage.append(get_index_size())
             elapsed.append(time.perf_counter() - start)

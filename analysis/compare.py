@@ -20,7 +20,8 @@ es = Elasticsearch("http://localhost:9200", request_timeout=30)
 
 def compare_query(query_name: str):
     ts_query = ts_queries[query_name]()
-    ts_results = ts.collections[DEFAULT_COLLECTION].documents.search({**ts_query})
+    ts_results = ts.collections[DEFAULT_COLLECTION].documents.search({
+                                                                     **ts_query})
 
     es_query = es_queries[query_name]()
     es_results = es.search(index=DEFAULT_COLLECTION, query=es_query)

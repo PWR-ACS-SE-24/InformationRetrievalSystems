@@ -9,3 +9,4 @@ tqdm==4.67.1; python_version >= '3.7'
 typesense==1.0.3; python_version >= '3'
 typing-extensions==4.13.2; python_version >= '3.8'
 urllib3==2.4.0; python_version >= '3.9'
+pandas

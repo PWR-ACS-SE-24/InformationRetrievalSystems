@@ -14,7 +14,8 @@ index_mapping = {
         "comments": {"type": "text"},
         "journal-ref": {"type": "text"},
         "doi": {"type": "keyword"},
-        "categories": {"type": "keyword"},  # in elastic every field is an array
+        # in elastic every field is an array
+        "categories": {"type": "keyword"},
         "abstract": {"type": "text"},
         "update_date": {"type": "date", "format": "yyyy-MM-dd"},
     }
@@ -24,7 +25,8 @@ index_settings = {
     "index": {"max_result_window": 1_000_000},
 }
 
-fix_lines = lambda a: map(fix_line, a)
+
+def fix_lines(a): return map(fix_line, a)
 
 
 def get_index_stats(client: Elasticsearch, index: str) -> int:
@@ -36,7 +38,8 @@ def get_index_stats(client: Elasticsearch, index: str) -> int:
 
 
 def get_fields(client: Elasticsearch, filename: str, indexname: str):
-    action_mapper = lambda f: {"_id": f["id"], "_index": indexname, "_source": f}
+    def action_mapper(f): return {
+        "_id": f["id"], "_index": indexname, "_source": f}
 
     elapsed = []
     usage = [get_index_stats(client, indexname)]

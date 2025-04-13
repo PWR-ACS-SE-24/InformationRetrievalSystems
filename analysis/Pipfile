@@ -9,6 +9,7 @@ tqdm = "*"
 typesense = "*"
 typing-extensions = "*"
 requests = "*"
+pandas = "*"
 
 [dev-packages]
 

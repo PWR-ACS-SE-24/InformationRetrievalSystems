@@ -14,7 +14,8 @@ queries = {
         "bool": {
             "must": [{"match": {"abstract": {"query": "nanostructures"}}}],
             "filter": [
-                {"range": {"update_date": {"gte": YEAR_2020.strftime("%Y-%m-%d")}}}
+                {"range": {"update_date": {
+                    "gte": YEAR_2020.strftime("%Y-%m-%d")}}}
             ],
         },
     },
@@ -22,7 +23,8 @@ queries = {
         "bool": {
             "must": [{"match": {"abstract": {"query": "machine learning models"}}}],
             "filter": [
-                {"range": {"update_date": {"gte": YEAR_2020.strftime("%Y-%m-%d")}}}
+                {"range": {"update_date": {
+                    "gte": YEAR_2020.strftime("%Y-%m-%d")}}}
             ],
         },
     },
@@ -33,7 +35,8 @@ queries = {
                 {"match": {"categories": "cs.AI"}},
             ],
             "filter": [
-                {"range": {"update_date": {"lte": YEAR_2020.strftime("%Y-%m-%d")}}}
+                {"range": {"update_date": {
+                    "lte": YEAR_2020.strftime("%Y-%m-%d")}}}
             ],
         }
     },
