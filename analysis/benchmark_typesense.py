@@ -10,7 +10,7 @@ YEAR_2020 = datetime.datetime(2020, 1, 1, 0, 0, 0)
 
 queries = {
     "abstract simple": lambda: {
-        "q": "quantum",
+        "q": "nanostructures",
         "query_by": "abstract",
         "sort_by": "_text_match:desc",
     },
@@ -20,7 +20,7 @@ queries = {
         "sort_by": "_text_match:desc",
     },
     "abstract simple AND year+": lambda: {
-        "q": "quantum",
+        "q": "nanostructures",
         "query_by": "abstract",
         "filter_by": f"update_date:>{unix_time_millis(YEAR_2020)}",
         "sort_by": "_text_match:desc",
@@ -31,7 +31,7 @@ queries = {
         "filter_by": f"update_date:>{unix_time_millis(YEAR_2020)}",
         "sort_by": "_text_match:desc",
     },
-    "(submitter OR category) AND year-": lambda: {
+    "submitter AND category AND year-": lambda: {
         "q": "John",
         "query_by": "submitter",
         "filter_by": f"categories:=cs.AI && update_date:<{unix_time_millis(YEAR_2020)}",

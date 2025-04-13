@@ -8,11 +8,11 @@ from elasticsearch import Elasticsearch
 YEAR_2020 = datetime.datetime(2020, 1, 1, 0, 0, 0)
 
 queries = {
-    "abstract simple": lambda: {"match": {"abstract": {"query": "quantum"}}},
+    "abstract simple": lambda: {"match": {"abstract": {"query": "nanostructures"}}},
     "abstract": lambda: {"match": {"abstract": {"query": "machine learning models"}}},
     "abstract simple AND year+": lambda: {
         "bool": {
-            "must": [{"match": {"abstract": {"query": "quantum"}}}],
+            "must": [{"match": {"abstract": {"query": "nanostructures"}}}],
             "filter": [
                 {"range": {"update_date": {"gte": YEAR_2020.strftime("%Y-%m-%d")}}}
             ],
@@ -26,9 +26,9 @@ queries = {
             ],
         },
     },
-    "(submitter OR category) AND year-": lambda: {
+    "submitter AND category AND year-": lambda: {
         "bool": {
-            "should": [
+            "must": [
                 {"match": {"submitter": {"query": "John"}}},
                 {"match": {"categories": "cs.AI"}},
             ],
@@ -99,5 +99,5 @@ if __name__ == "__main__":
     for name, query in queries.items():
         print(name, end=": ")
         for concurrency in [1, 5, 10, 20, 50]:
-            print(f"{benchmark(100, query, concurrency): 5f}", end=", ")
+            print(f"{benchmark(1000, query, concurrency): 5f}", end=", ")
         print()
