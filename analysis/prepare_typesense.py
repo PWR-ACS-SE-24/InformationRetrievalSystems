@@ -45,6 +45,7 @@ def _fix_line_date(line: str) -> dict:
     parsed = fix_line(line)
     epoch = datetime.strptime(parsed["update_date"], "%Y-%m-%d")
     parsed["update_date"] = unix_time_millis(epoch)
+    return parsed
 
 
 if __name__ == "__main__":
@@ -52,6 +53,7 @@ if __name__ == "__main__":
         {
             "api_key": "test",
             "nodes": [{"host": "localhost", "port": "8108", "protocol": "http"}],
+            "connection_timeout_seconds": 30,
         }
     )
 
@@ -61,11 +63,25 @@ if __name__ == "__main__":
             {"name": "submitter", "type": "string", "index": True, "facet": True},
             # ciekawe czy to by miało sens
             {"name": "authors", "type": "string", "index": False, "facet": False},
-            {"name": "title", "type": "string", "index": True, "facet": False},
+            {
+                "name": "title",
+                "type": "string",
+                "index": True,
+                "facet": False,
+                "store": False,
+                "stem": True,
+            },
             {"name": "comments", "type": "string", "index": False, "facet": False},
             {"name": "journal-ref", "type": "string", "index": False, "facet": False},
             {"name": "doi", "type": "string", "index": False, "facet": False},
-            {"name": "abstract", "type": "string", "index": True, "facet": False},
+            {
+                "name": "abstract",
+                "type": "string",
+                "index": True,
+                "facet": False,
+                "store": False,
+                "stem": True,
+            },
             {"name": "categories", "type": "string[]", "index": True, "facet": True},
             {"name": "versions.*", "type": "auto", "index": False, "facet": False},
             {"name": "update_date", "type": "int64", "index": True},
@@ -76,7 +92,7 @@ if __name__ == "__main__":
         ts.collections["arxiv"].delete()
     except Exception as e:
         pass
-    print(ts.collections.create({"name": "arxiv", **schema}))
+    ts.collections.create({"name": "arxiv", **schema})
 
     with open("arxiv-metadata-oai-snapshot.json", "r") as file:
         elapsed = []
@@ -86,8 +102,9 @@ if __name__ == "__main__":
         file.seek(0)
 
         start = time.perf_counter()
+        batch_size = (length // 25) + 1
 
-        for chunk in tqdm(batched(file, (length // 25) + 1)):
+        for chunk in tqdm(batched(file, batch_size)):
             ts.collections["arxiv"].documents.import_(map(_fix_line_date, chunk))
 
             usage.append(get_index_size())

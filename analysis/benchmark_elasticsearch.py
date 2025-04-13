@@ -41,7 +41,7 @@ queries = {
         "bool": {
             "should": [
                 {"match": {"abstract": {"query": "artificial neural network"}}},
-                {"match": {"title": {"query": "deep"}}},
+                {"match": {"title": {"query": "artificial neural network"}}},
             ],
             "filter": [{"match": {"categories": "cs.AI"}}],
         }
@@ -71,7 +71,12 @@ class TaskProcess(Process):
         i = 0
         start = time.perf_counter_ns()
         while i < self.n:
-            self.es.search(index=self.collection, query=self.query(), size=1000)
+            self.es.search(
+                index=self.collection,
+                query=self.query(),
+                request_cache=False,
+                sort={"_score": {"order": "desc"}},
+            )
             i += 1
 
         self.return_dict[self.ident] = time.perf_counter_ns() - start

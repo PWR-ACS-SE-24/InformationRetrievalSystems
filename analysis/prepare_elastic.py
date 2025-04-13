@@ -20,6 +20,10 @@ index_mapping = {
     }
 }
 
+index_settings = {
+    "index": {"max_result_window": 1_000_000},
+}
+
 fix_lines = lambda a: map(fix_line, a)
 
 
@@ -59,7 +63,9 @@ if __name__ == "__main__":
     if client.indices.exists(index="arxiv"):
         client.indices.delete(index="arxiv")
 
-    client.indices.create(index="arxiv", mappings=index_mapping)
+    client.indices.create(
+        index="arxiv", mappings=index_mapping, settings=index_settings
+    )
     stats = get_fields(client, "arxiv-metadata-oai-snapshot.json", "arxiv")
 
     with open("elastic_stats.json", "w") as file:
