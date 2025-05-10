@@ -2,3 +2,5 @@
 arxiv-metadata-oai-snapshot.json
 elastic_stats.json
 typesense_stats.json
+benchmark_elasticsearch.json
+benchmark_typesense.json
