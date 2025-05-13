@@ -4,10 +4,13 @@ import re
 import typing as t
 from datetime import datetime
 from itertools import batched
+from logging import Logger
 from pathlib import Path
+from threading import Thread
 
 from elasticsearch import helpers
-from sqlmodel import Session, SQLModel, col, func, select
+from elasticsearch.helpers.errors import BulkIndexError
+from sqlmodel import Session, SQLModel, col, func
 
 from arxivsearch.database import ArxivCategoriesModel, ArxivPaperModel, setup_database
 from arxivsearch.elastic import setup_elastic
@@ -18,7 +21,7 @@ INDEXNAME = "arxiv"
 index_mapping = {
     "properties": {
         "id": {"type": "keyword"},
-        "submitter": {"type": "text"},
+        "submitter": {"type": "keyword"},
         "authors": {"type": "text"},
         "title": {"type": "text"},
         "comments": {"type": "text"},
@@ -72,7 +75,7 @@ def parse_lines(file: Path, parts: int = 25):
                 if parsed_line["submitter"] is None:
                     continue
 
-                # authors are fucked up
+                # authors are fucked up7
                 parsed_line["authors"] = fix_text(parsed_line["authors"])
 
                 # title could be fucked up
@@ -151,20 +154,37 @@ def setup_bases(path_to_dump: Path, force: bool = False):
 
     logger.info("Starting to parse lines")
 
-    with Session(engine) as session:
+    def insert_into_elastic():
         for i, batches in enumerate(parse_lines(path_to_dump, parts=parts)):
-
             # we need to insert into elastic first, because postgres_fix may breaks dicts
-            helpers.bulk(elastic, map(do_elastic_fixes, batches))
+            for ok, _ in helpers.parallel_bulk(elastic, map(do_elastic_fixes, batches)):
+                if not ok:
+                    logger.error("Error while inserting into elastic")
+                    continue
+
             logger.debug(f"Inserted {(i + 1)/ parts * 100:.2f}% of data into elastic")
 
-            # we need to insert into postgres
-            for entry in batches:
-                paper = ArxivPaperModel(**do_postgres_fixes(entry))
-                session.add(paper)
+    def insert_into_postgres():
+        with Session(engine) as session:
+            for i, batches in enumerate(parse_lines(path_to_dump, parts=parts)):
+                # we need to insert into postgres
+                for entry in batches:
+                    paper = ArxivPaperModel(**do_postgres_fixes(entry))
+                    session.add(paper)
 
-            session.commit()
-            logger.debug(f"Inserted {(i + 1)/ parts * 100:.2f}% of data into postgres")
+                session.commit()
+                logger.debug(f"Inserted {(i + 1)/ parts * 100:.2f}% of data into postgres")
+
+    t1 = Thread(target=insert_into_elastic)
+    t2 = Thread(target=insert_into_postgres)
+
+    t1.start()
+    t2.start()
+
+    t1.join()
+    t2.join()
+
+    logger.info("Finished inserting data into both databases")
 
 
 if __name__ == "__main__":

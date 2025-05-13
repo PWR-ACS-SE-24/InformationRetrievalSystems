@@ -5,11 +5,7 @@ from sqlalchemy import Column, String
 from sqlmodel import ARRAY, Field, SQLModel
 
 
-class ArxivPaperModel(SQLModel, table=True, arbitrary_types_allowed=True):
-    __tablename__ = "arxiv_papers"
-
-    # ID for database purposes
-    id: int | None = Field(default=None, primary_key=True)
+class ArxivPaperModelBase(SQLModel):
 
     # ID for arxiv purposes
     arxiv_id: str = Field(index=True, nullable=False)
@@ -33,6 +29,13 @@ class ArxivPaperModel(SQLModel, table=True, arbitrary_types_allowed=True):
 
     class Config:
         arbitrary_types_allowed = True
+
+
+class ArxivPaperModel(ArxivPaperModelBase, table=True):
+    __tablename__ = "arxiv_papers"
+
+    # ID for database purposes
+    id: int | None = Field(default=None, primary_key=True)
 
 
 class ArxivCategoriesModel(SQLModel, table=True):
