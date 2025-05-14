@@ -11,8 +11,8 @@ class ArxivPaperModelBase(SQLModel):
     arxiv_id: str = Field(index=True, nullable=False)
     doi: str | None = Field(index=True, nullable=True)
 
-    # Authors are for some reason fucked up in the json dump
-    authors: str = Field(nullable=False)
+    authors: t.List[str] = Field(default_factory=list, sa_column=Column(ARRAY(String())))
+
     submitter: str = Field(nullable=False)
 
     title: str = Field(nullable=False)

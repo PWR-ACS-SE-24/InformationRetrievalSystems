@@ -8,7 +8,9 @@ dependencies = [
     "elasticsearch>=8.18",
     "fastapi[standard]>=0.115.12",
     "psycopg[binary]>=3.2.7",
+    "pylatexenc>=2.10",
     "sqlmodel>=0.0.24",
+    "tqdm>=4.67.1",
 ]
 
 [dependency-groups]

@@ -27,7 +27,7 @@ class FacetBy(BaseModel):
     value: str = Field(..., description="Value to facet by", min_length=1, max_length=100)
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "field": "categories",
             "value": "cs.AI",
         }
@@ -37,12 +37,10 @@ class FacetByResult(FacetBy):
     count: int = Field(..., description="Count of papers in this facet")
 
     class Config:
-        schema_extra = {
-            "example": {
-                "field": "categories",
-                "value": "cs.AI",
-                "count": 2137,
-            }
+        json_schema_extra = {
+            "field": "categories",
+            "value": "cs.AI",
+            "count": 2137,
         }
 
 
@@ -55,7 +53,8 @@ class SearchQuery(BaseModel):
     year_start: int = Field(2000, ge=2000, le=CURRENT_YEAR, description="Year range start for the search")
     year_end: int = Field(CURRENT_YEAR, ge=2000, le=CURRENT_YEAR, description="Year range end for the search")
 
-    # how the fuck are we going to achieve this?
+    # lets assume, that open_access => (refid != None)
+    # TODO: implement me
     open_access: bool = Field(True, description="Only return open access papers")
 
     facet_by: t.List[FacetBy] | None = Field([], description="Set facets to search in", max_length=10)
@@ -92,11 +91,14 @@ def search(
     additional_musts = []
     if search_query.author:
         additional_musts.append(
-            {"multi_match": {"query": search_query.author, "fields": ["authors", "submitter"]}},
+            {"multi_match": {"query": search_query.author, "fields": ["authors"]}},
         )
 
     if search_query.subject:
         additional_musts.append({"match": {"category": {"query": search_query.subject}}})
+
+    for facet in search_query.facet_by:
+        additional_musts.append({"match": {facet.field: {"query": facet.value}}})
 
     query = {
         "bool": {
@@ -120,9 +122,9 @@ def search(
                 "size": 10,
             }
         },
-        "submitter-agg": {
+        "authors-agg": {
             "terms": {
-                "field": "submitter",
+                "field": "authors",
                 "size": 10,
             }
         },
@@ -160,14 +162,14 @@ def search(
         paper_map[paper.arxiv_id] = paper
 
     categories_facets = result["aggregations"]["categories-agg"]["buckets"]
-    submitter_facets = result["aggregations"]["submitter-agg"]["buckets"]
+    author_facets = result["aggregations"]["authors-agg"]["buckets"]
 
     all_facets = [
         *[
             FacetByResult(field="categories", value=facet["key"], count=facet["doc_count"])
             for facet in categories_facets
         ],
-        *[FacetByResult(field="authors", value=facet["key"], count=facet["doc_count"]) for facet in submitter_facets],
+        *[FacetByResult(field="authors", value=facet["key"], count=facet["doc_count"]) for facet in author_facets],
     ]
 
     # prepare response
