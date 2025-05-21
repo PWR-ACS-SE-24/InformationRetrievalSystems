@@ -1,5 +1,26 @@
 services:
-  arxivsearch:
+  print-status:
+    image: busybox
+    command: 'sh -c ''echo -e "--------------------------------------------\n|                                          |\n|   App started: \"http://localhost:1337\"   |\n|                                          |\n--------------------------------------------"'''
+    depends_on:
+      - frontend
+
+  frontend:
+    build:
+      context: frontend
+      dockerfile: Dockerfile
+
+    environment:
+      - BACKEND_URL=http://backend:2137
+
+    ports:
+      - "1337:3000"
+
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  backend:
     build:
       context: backend
       dockerfile: Dockerfile
