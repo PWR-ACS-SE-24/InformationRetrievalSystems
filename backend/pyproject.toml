@@ -1,0 +1,27 @@
+[project]
+name = "arxivsearch"
+version = "0.1.0"
+description = "D:"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "elasticsearch>=8.18",
+    "fastapi[standard]>=0.115.12",
+    "psycopg[binary]>=3.2.7",
+    "pylatexenc>=2.10",
+    "sqlmodel>=0.0.24",
+    "tqdm>=4.67.1",
+]
+
+[dependency-groups]
+dev = [
+    "black>=25.1.0",
+    "isort>=6.0.1",
+    "pytest>=8.3.5",
+]
+
+[tool.black]
+line-length = 120
+
+[tool.isort]
+profile = "black"
