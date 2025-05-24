@@ -8,6 +8,7 @@ from arxivsearch.logger import setup_logger
 logger = setup_logger()
 
 from arxivsearch.database import setup_database
+from arxivsearch.database.helpers import preload_categories
 from arxivsearch.elastic import setup_elastic
 from arxivsearch.routes import routers
 
@@ -20,6 +21,8 @@ def create_app() -> FastAPI:
 
     app.state.engine_database = setup_database()
     app.state.engine_elasticsearch = setup_elastic()
+
+    preload_categories(app.state.engine_database)
 
     for router in routers:
         logger.debug(f"Registering router: /api{router.prefix}")

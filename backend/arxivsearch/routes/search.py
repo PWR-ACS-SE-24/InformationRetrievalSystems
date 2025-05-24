@@ -55,7 +55,7 @@ class SearchQuery(BaseModel):
 
     # lets assume, that open_access => (refid != None)
     # TODO: implement me
-    open_access: bool = Field(True, description="Only return open access papers")
+    published: bool = Field(False, description="Only return open access papers")
 
     facet_by: t.List[FacetBy] | None = Field([], description="Set facets to search in", max_length=10)
 
@@ -93,6 +93,9 @@ def search(
         additional_musts.append(
             {"multi_match": {"query": search_query.author, "fields": ["authors"]}},
         )
+
+    if search_query.published:
+        additional_musts.append({"exists": {"field": "refid"}})
 
     if search_query.subject:
         additional_musts.append({"match": {"category": {"query": search_query.subject}}})

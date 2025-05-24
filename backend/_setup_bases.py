@@ -2,15 +2,18 @@ import argparse
 import json
 import time
 import typing as t
+from csv import DictReader
 from datetime import datetime
 from itertools import batched
+from logging import Logger
 from multiprocessing import Process, Queue
 from pathlib import Path
 from queue import Empty, Full
 from threading import Thread
 
-from elasticsearch import helpers
+from elasticsearch import Elasticsearch, helpers
 from pylatexenc.latex2text import LatexNodes2Text
+from sqlalchemy import Engine
 from sqlmodel import Session, SQLModel, col, func
 from tqdm import tqdm
 
@@ -201,13 +204,31 @@ class Writer(Process):
                 file.write(json.dumps(line) + "\n")
 
 
-def setup_bases(path_to_dump: Path, force: bool = False):
-    engine = setup_database()
-    elastic = setup_elastic()
+def setup_categories(engine: Engine, logger: Logger, path_to_categories: Path, force: int = 0):
+    logger.info("Setting up categories...")
 
-    logger = setup_logger()
-    logger.setLevel("DEBUG")
+    with Session(engine) as session:
+        count = session.exec(func.count(col(ArxivCategoriesModel.id))).first()[0]
+        logger.debug(f"Found {count} categories in postgres")
 
+    if force == 0 and count > 0:
+        logger.info("Categories already exist, skipping setup")
+        return
+
+    SQLModel.metadata.drop_all(engine, [SQLModel.metadata.tables["arxiv_categories"]])
+    SQLModel.metadata.create_all(engine, [SQLModel.metadata.tables["arxiv_categories"]])
+
+    logger.info("Inserting categories into postgres")
+
+    with open(path_to_categories, "r") as file:
+        categories = [ArxivCategoriesModel(**i) for i in DictReader(file, delimiter=";")]
+
+    with Session(engine) as session:
+        session.bulk_save_objects(categories)
+        session.commit()
+
+
+def setup_bases(engine: Engine, elastic: Elasticsearch, logger: Logger, path_to_dump: Path, force: int = 0):
     logger.info("Setting up bases...")
 
     logger.info("Checking whether data already exists in both databases")
@@ -220,12 +241,12 @@ def setup_bases(path_to_dump: Path, force: bool = False):
         logger.debug(f"Postgres amount: {postgres_amount}")
         logger.debug(f"Elastic amount: {elastic_amount}")
 
-        if elastic_amount == postgres_amount and postgres_amount > 0 and force == 0:
-            logger.info("Data already exists in both databases, skipping setup")
-            return
-
     except Exception as e:
         logger.error(f"Error while checking elasticsearch: {e}")
+
+    if elastic_amount == postgres_amount and postgres_amount > 0 and force == 0:
+        logger.info("Data already exists in both databases, skipping setup")
+        return
 
     logger.debug("Clearing existing data in elasticsearch")
     if elastic.indices.exists(index="arxiv"):
@@ -233,8 +254,8 @@ def setup_bases(path_to_dump: Path, force: bool = False):
 
     elastic.indices.create(index="arxiv", mappings=index_mapping)
 
-    SQLModel.metadata.drop_all(engine)
-    SQLModel.metadata.create_all(engine)
+    SQLModel.metadata.drop_all(engine, [SQLModel.metadata.tables["arxiv_papers"]])
+    SQLModel.metadata.create_all(engine, [SQLModel.metadata.tables["arxiv_papers"]])
 
     logger.info("Starting to parse lines")
     result_path = path_to_dump.with_name("arxiv-processed.jsonl")
@@ -315,6 +336,19 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
+        "--path-to-categories",
+        type=Path,
+        default=Path("categories.csv"),
+        help="Path to the categories file",
+    )
+
+    parser.add_argument(
+        "" "--categories-only",
+        action="store_true",
+        help="Only setup categories, not papers",
+    )
+
+    parser.add_argument(
         "--force",
         "-f",
         action="count",
@@ -326,4 +360,13 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    setup_bases(args.path, force=args.force)
+    engine = setup_database()
+    elastic = setup_elastic()
+    logger = setup_logger()
+    logger.setLevel("DEBUG")
+
+    setup_categories(engine, logger, args.path_to_categories, force=args.force)
+    if args.categories_only:
+        exit(0)
+
+    setup_bases(engine, elastic, logger, args.path, force=args.force)
