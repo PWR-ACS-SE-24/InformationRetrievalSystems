@@ -42,6 +42,10 @@
     return selectedSubjects[categoryId].includes(subId);
   }
 
+  function isAnyChecked(categoryId: string) {
+    return selectedSubjects[categoryId].length > 0;
+  }
+
   function toggleSub(categoryId: string, subId: string, checked: boolean) {
     const list = selectedSubjects[categoryId];
     if (checked && !list.includes(subId)) {
@@ -125,13 +129,12 @@
       </DropdownMenu.Trigger>
 
       <DropdownMenu.Content class="w-64">
-        <DropdownMenu.Label class="font-bold">Subject</DropdownMenu.Label>
-        <DropdownMenu.Separator />
-
         {#each availableSubjects as category}
           <DropdownMenu.Sub>
             <DropdownMenu.SubTrigger>
-              {category.name}
+              <span class={isAnyChecked(category.id) ? "font-bold" : ""}>
+                {category.name}
+              </span>
             </DropdownMenu.SubTrigger>
 
             <DropdownMenu.SubContent class="w-64 max-h-80 overflow-y-auto">
@@ -142,7 +145,7 @@
                   toggleAll(category.id, !isAllChecked(category.id));
                 }}
               >
-                <span class="font-semibold">{category.name}</span>
+                <span class="font-semibold">Check all</span>
               </DropdownMenu.CheckboxItem>
 
               <DropdownMenu.Separator />
