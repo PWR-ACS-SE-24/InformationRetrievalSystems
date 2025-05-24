@@ -50,8 +50,8 @@ class SearchQuery(BaseModel):
     author: str | None = Field(None, description="Author name to search for")
     subject: str | None = Field(None, description="Subject category to search in")
 
-    year_start: int = Field(2000, ge=2000, le=CURRENT_YEAR, description="Year range start for the search")
-    year_end: int = Field(CURRENT_YEAR, ge=2000, le=CURRENT_YEAR, description="Year range end for the search")
+    year_start: int = Field(1986, ge=1986, le=CURRENT_YEAR, description="Year range start for the search")
+    year_end: int = Field(CURRENT_YEAR, ge=1986, le=CURRENT_YEAR, description="Year range end for the search")
 
     # lets assume, that open_access => (refid != None)
     # TODO: implement me

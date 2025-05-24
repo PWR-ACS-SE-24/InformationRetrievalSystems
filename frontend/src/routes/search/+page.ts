@@ -1,4 +1,5 @@
 import type { PageLoad } from "./$types";
+import { response } from "$lib/response";
 
 export const load: PageLoad = ({ url }: { url: URL }) => {
   const q = url.searchParams.get("q") ?? "";
@@ -19,6 +20,22 @@ export const load: PageLoad = ({ url }: { url: URL }) => {
   }
 
   // TODO: Call to API
+  const time_to_search = response.time_to_search;
+  const total = response.total;
+  const papers = response.papers;
+  const available_facets = response.available_facets;
+  const categories = available_facets
+    .filter((facet) => facet.field === "categories")
+    .map((facet) => ({
+      value: facet.value,
+      count: facet.count,
+    }));
+  const authors = available_facets
+    .filter((facet) => facet.field === "authors")
+    .map((facet) => ({
+      value: facet.value,
+      count: facet.count,
+    }));
 
   return {
     q,
@@ -27,5 +44,10 @@ export const load: PageLoad = ({ url }: { url: URL }) => {
     minYear: minYear,
     maxYear: maxYear,
     selectedSubjects,
+    time_to_search,
+    total,
+    papers,
+    categories,
+    authors,
   };
 };
