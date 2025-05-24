@@ -1,7 +1,7 @@
 <script lang="ts">
-  import RangeSlider from "svelte-range-slider-pips";
   import search from "$lib/assets/search.svg";
   import { subjects } from "$lib/subjects";
+  import RangeSlider from "svelte-range-slider-pips";
 
   const slider_min = 1986;
   const slider_max = new Date().getFullYear();
@@ -15,6 +15,7 @@
   function handleSelectChange(event: Event) {
     const target = event.target as HTMLSelectElement;
     subject = target.value;
+    target.classList.remove("untouched");
   }
 </script>
 
@@ -25,14 +26,29 @@
     <span class="icon">
       <img src={search} alt="Search icon" width="16" height="16" />
     </span>
-    <input type="text" placeholder="Search" bind:value={searchQuery} />
+    <input
+      type="text"
+      placeholder="Search"
+      bind:value={searchQuery}
+      aria-label="Query"
+    />
   </div>
 
   <div class="input-group">
-    <input type="text" placeholder="Author" bind:value={author} />
+    <input
+      type="text"
+      placeholder="Author"
+      bind:value={author}
+      aria-label="Author"
+    />
 
-    <select bind:value={subject} on:change={handleSelectChange}>
-      <option value="">Subject</option>
+    <select
+      bind:value={subject}
+      on:change={handleSelectChange}
+      class="untouched"
+      aria-label="Subject"
+    >
+      <option selected hidden disabled value="">Subject</option>
       {#each subjects as category}
         <option value={category.id}>{category.name}</option>
         {#each category.subcategories as subcat}
@@ -59,15 +75,40 @@
   <button class="search-button">Search</button>
 </div>
 
+<svelte:head>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link
+    rel="preconnect"
+    href="https://fonts.gstatic.com"
+    crossorigin="anonymous"
+  />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap"
+    rel="stylesheet"
+  />
+</svelte:head>
+
 <style>
   :global(body) {
     background: #f5f5f5;
+    font-family: "Roboto", sans-serif;
+    font-optical-sizing: auto;
+    font-style: normal;
+    font-variation-settings: "wdth" 100;
+  }
+
+  :global(input) {
+    font-family: unset;
+  }
+
+  ::placeholder {
+    /* TODO: placeholder color is set by hand */
+    color: #999;
   }
 
   .search-container {
     max-width: 400px;
     margin: auto;
-    font-family: sans-serif;
     text-align: center;
 
     display: flex;
@@ -124,8 +165,12 @@
     width: 100%;
   }
 
+  select.untouched {
+    color: #999;
+  }
   select option {
-    padding-left: 0.5rem;
+    padding-left: 3rem;
+    color: #000;
   }
 
   /* Wcięcie dla podkategorii w dropdown */
