@@ -3,76 +3,17 @@ import typing as t
 from datetime import date
 
 from fastapi import APIRouter, Query
-from pydantic import BaseModel, Field, model_validator
 from sqlmodel import col, select
 
 import arxivsearch.config as config
 from arxivsearch.database import SessionDep
-from arxivsearch.database.arxiv import ArxivPaperModel, ArxivPaperModelBase
+from arxivsearch.database.arxiv import ArxivPaperModel
 from arxivsearch.elastic import ElasticDep
 from arxivsearch.logger import get_logger
+from arxivsearch.routes.models import FacetByResult, SearchQuery, SearchResponse
 
 logger = get_logger("search")
 search_router = APIRouter(prefix="/search", tags=["search"])
-
-CURRENT_YEAR = date.today().year
-
-PossibleFacets = t.Literal["categories", "authors"]
-
-
-# this is kinda overkill, cos we send "field" value multiple times
-# TODO: think of something better than this
-class FacetBy(BaseModel):
-    field: PossibleFacets = Field(..., description="Field to facet by")
-    value: str = Field(..., description="Value to facet by", min_length=1, max_length=100)
-
-    class Config:
-        json_schema_extra = {
-            "field": "categories",
-            "value": "cs.AI",
-        }
-
-
-class FacetByResult(FacetBy):
-    count: int = Field(..., description="Count of papers in this facet")
-
-    class Config:
-        json_schema_extra = {
-            "field": "categories",
-            "value": "cs.AI",
-            "count": 2137,
-        }
-
-
-class SearchQuery(BaseModel):
-    search: str = Field(..., description="Search term to query", min_length=1, max_length=100)
-
-    author: str | None = Field(None, description="Author name to search for")
-    subject: str | None = Field(None, description="Subject category to search in")
-
-    year_start: int = Field(2000, ge=2000, le=CURRENT_YEAR, description="Year range start for the search")
-    year_end: int = Field(CURRENT_YEAR, ge=2000, le=CURRENT_YEAR, description="Year range end for the search")
-
-    # lets assume, that open_access => (refid != None)
-    # TODO: implement me
-    published: bool = Field(False, description="Only return open access papers")
-
-    facet_by: t.List[FacetBy] | None = Field([], description="Set facets to search in", max_length=10)
-
-    @model_validator(mode="after")
-    def check_years(self) -> t.Self:
-        if self.year_end < self.year_start:
-            raise ValueError("Year start should be less or equal to year end")
-        return self
-
-
-class SearchResponse(BaseModel):
-    time_to_search: int = Field(..., description="Time taken to search in ms")
-    total: int = Field(..., description="Total number of results")
-
-    papers: t.List[ArxivPaperModelBase] = Field(..., description="List of papers found in the search")
-
-    available_facets: t.List[FacetByResult] = Field(..., description="Facets available for the search")
 
 
 @search_router.post("", response_model=SearchResponse)
@@ -89,6 +30,7 @@ def search(
 
     # prepare query
     additional_musts = []
+
     if search_query.author:
         additional_musts.append(
             {"multi_match": {"query": search_query.author, "fields": ["authors"]}},
@@ -98,7 +40,21 @@ def search(
         additional_musts.append({"exists": {"field": "refid"}})
 
     if search_query.subject:
-        additional_musts.append({"match": {"category": {"query": search_query.subject}}})
+        cats = []
+        for search_subject, subcategories in search_query.subject.items():
+            if not subcategories:
+                continue
+
+            cats.extend([f"{search_subject}.{subcat}" for subcat in subcategories])
+
+        # match any of the subcategories
+        additional_musts.append(
+            {
+                "terms": {
+                    "categories": cats,
+                }
+            }
+        )
 
     for facet in search_query.facet_by:
         additional_musts.append({"match": {facet.field: {"query": facet.value}}})

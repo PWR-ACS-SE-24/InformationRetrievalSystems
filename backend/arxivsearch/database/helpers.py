@@ -9,10 +9,10 @@ from arxivsearch.logger import get_logger
 
 logger = get_logger("helpers")
 
-parsed_categories: t.Optional[t.List[t.Dict[str, t.Any]]] = None
+parsed_categories: t.Optional[t.Dict[str, t.Any]] = None
 
 
-def get_categories() -> t.List[t.Dict[str, t.Any]]:
+def get_categories() -> t.Dict[str, t.Any]:
     if parsed_categories is None:
         raise ValueError("Categories have not been preloaded. Call preload_categories first.")
 
@@ -36,14 +36,13 @@ def preload_categories(engine: Engine):
     #      { id: "cs.AR", name: "Hardware Architecture" },
     #     ...
 
-    categories = defaultdict(lambda: {"name": "", "subcategories": []})
+    parsed_categories = defaultdict(lambda: {"name": "", "subcategories": {}})
 
     for category in found_categories:
         if category.subcategory:
-            categories[category.category]["subcategories"].append(
-                {"id": f"{category.category}.{category.subcategory}", "name": category.name}
-            )
+            parsed_categories[category.category]["subcategories"][category.subcategory] = {
+                "id": f"{category.category}.{category.subcategory}",
+                "name": category.name,
+            }
         else:
-            categories[category.category]["name"] = category.name
-
-    parsed_categories = [{"id": k, **v} for k, v in categories.items()]
+            parsed_categories[category.category]["name"] = category.name
