@@ -1,33 +1,19 @@
 <script lang="ts">
-  import { goto } from "$app/navigation";
+  import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
+  import RangeSlider from "svelte-range-slider-pips";
+  import type { components } from "$lib/generated/backend-openapi";
   import { Button } from "$lib/components/ui/button/index.js";
   import { Checkbox } from "$lib/components/ui/checkbox/index.js";
-  import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
+  import { ChevronDown, Search } from "lucide-svelte";
   import { Input } from "$lib/components/ui/input/index.js";
   import { Label } from "$lib/components/ui/label/index.js";
-  import { ChevronDown, Search } from "lucide-svelte";
-  import RangeSlider from "svelte-range-slider-pips";
   import { SvelteSet } from "svelte/reactivity";
+  import { goto } from "$app/navigation";
 
-  type Subcategory = {
-    id: string;
-    name: string;
-  };
+  type CategoryModel = components["schemas"]["CategoryModel"];
 
-  type SubjectCategory = {
-    id: string;
-    name: string;
-    subcategories: Subcategory[];
-  };
-
-  type AvailableSubjects = SubjectCategory[];
-
-  const { availableSubjects = [] }: { availableSubjects: AvailableSubjects } =
+  const { availableSubjects = [] }: { availableSubjects: CategoryModel[] } =
     $props();
-
-  const multiLevelSubjects: SubjectCategory[] = availableSubjects.filter(
-    (cat) => cat.subcategories.length > 0
-  );
 
   const min = 1986; // extracted from dataset by script in /analysis/test.py that probably works just fine
   const max = new Date().getFullYear();
@@ -136,7 +122,7 @@
       </DropdownMenu.Trigger>
 
       <DropdownMenu.Content class="w-64">
-        {#each multiLevelSubjects as category}
+        {#each availableSubjects as category}
           <DropdownMenu.Sub>
             <DropdownMenu.SubTrigger>
               <span class={isAnyChecked(category.id) ? "font-medium" : ""}>

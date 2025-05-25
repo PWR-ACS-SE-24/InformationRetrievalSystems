@@ -1,21 +1,9 @@
 <script lang="ts">
+  import type { components } from "$lib/generated/backend-openapi";
   import { Separator } from "$lib/components/ui/separator/index.js";
+  type ArxivPaperModelBase = components["schemas"]["ArxivPaperModelBase"];
 
-  type ArxivEntry = {
-    doi: string | null;
-    submitter: string;
-    abstract: string;
-    categories: string[];
-    title: string;
-    arxiv_id: string;
-    authors: string[];
-    journal_ref: string | null;
-    comments: string;
-    update_date: string;
-    create_date: string;
-  };
-
-  const { paper } = $props<{ paper: ArxivEntry }>();
+  const { paper } = $props<{ paper: ArxivPaperModelBase }>();
   const humanReadableDate = new Date(paper.update_date).toLocaleDateString(
     "en-UK",
     {

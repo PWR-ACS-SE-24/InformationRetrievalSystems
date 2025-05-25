@@ -1,5 +1,8 @@
 // I have ignored other subcategories for physics other than physics and astro physics, because it would be hell to implement
 
+import type { components } from "$lib/generated/backend-openapi";
+type CategoryModel = components["schemas"]["CategoryModel"];
+
 export const subjects = [
   {
     id: "cs",
@@ -696,4 +699,4 @@ export const subjects = [
     name: "Mathematical Physics",
     subcategories: [],
   },
-];
+] satisfies CategoryModel[];

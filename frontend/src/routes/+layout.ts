@@ -1,24 +1,15 @@
 import type { LayoutLoad } from "./$types";
+import type { components } from "$lib/generated/backend-openapi";
 import { subjects } from "$lib/subjects";
+type CategoryModel = components["schemas"]["CategoryModel"];
 
-type Subcategory = {
-  id: string;
-  name: string;
-};
-
-type Subject = {
-  id: string;
-  name: string;
-  subcategories: Subcategory[];
-};
-
-function processSubjects(subjects: Subject[]): Subject[] {
+function processSubjects(subjects: CategoryModel[]): CategoryModel[] {
   const [withSubcategories, withoutSubcategories] = subjects.reduce(
     ([withSubs, withoutSubs], subject) =>
       subject.subcategories.length > 0
         ? [[...withSubs, subject], withoutSubs]
         : [withSubs, [...withoutSubs, subject]],
-    [[], []] as [Subject[], Subject[]]
+    [[], []] as [CategoryModel[], CategoryModel[]]
   );
 
   return withoutSubcategories.length === 0

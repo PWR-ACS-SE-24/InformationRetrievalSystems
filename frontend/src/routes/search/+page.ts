@@ -1,20 +1,11 @@
 import type { PageLoad } from "./$types";
+import type { components } from "$lib/generated/backend-openapi";
 import { response } from "$lib/response";
-
-type Subcategory = {
-  id: string;
-  name: string;
-};
-
-type Subject = {
-  id: string;
-  name: string;
-  subcategories: Subcategory[];
-};
+type CategoryModel = components["schemas"]["CategoryModel"];
 
 function translateCategories(
   categories: string[],
-  subjects: Subject[]
+  subjects: CategoryModel[]
 ): string[] {
   return categories.map((category) => {
     const subject = subjects.find((s) => s.id === category);
