@@ -1,16 +1,20 @@
 import argparse
 import json
+import locale
 import time
 import typing as t
+from csv import DictReader
 from datetime import datetime
 from itertools import batched
+from logging import Logger
 from multiprocessing import Process, Queue
 from pathlib import Path
 from queue import Empty, Full
 from threading import Thread
 
-from elasticsearch import helpers
+from elasticsearch import Elasticsearch, helpers
 from pylatexenc.latex2text import LatexNodes2Text
+from sqlalchemy import Engine
 from sqlmodel import Session, SQLModel, col, func
 from tqdm import tqdm
 
@@ -32,6 +36,7 @@ index_mapping = {
         "categories": {"type": "keyword"},
         "abstract": {"type": "text"},
         "update_date": {"type": "date", "format": "yyyy-MM-dd"},
+        "create_date": {"type": "date", "format": "yyyy-MM-dd"},
     }
 }
 
@@ -44,10 +49,8 @@ def do_elastic_fixes(line: dict) -> dict:
 def do_postgres_fixes(line: dict) -> dict:
     # we want to parse date it from YYYY-mm-dd to date
     line["update_date"] = datetime.strptime(line["update_date"], "%Y-%m-%d")
+    line["create_date"] = datetime.strptime(line["create_date"], "%Y-%m-%d")
     line["arxiv_id"] = line.pop("id")
-
-    # we update in place, so we need to be careful not to overwrite the data
-    # before its inserted into elastic
     return line
 
 
@@ -94,11 +97,14 @@ class Processor(Process):
         super().__init__(*args, **kwargs)
         self.reader_queue = reader_queue
         self.writer_queue = writer_queue
+        locale.setlocale(locale.LC_ALL, "en_US.UTF-8")
         self.latex_context = LatexNodes2Text()
 
     def fix_text(self, content: str) -> str:
+        # text defucker 3001
         content = str(self.latex_context.latex_to_text(content))
-        return content.replace("\n", " ")
+        content = content.replace("\n", " ")
+        return " ".join([i for i in content.split(" ") if len(i) > 0])  # remove multiple spaces
 
     def process(self, parsed_line: dict) -> dict:
 
@@ -143,6 +149,13 @@ class Processor(Process):
                     parsed_categories.add(category)
 
             parsed_line["categories"] = list(parsed_categories)
+
+            # extract create_date
+            updates = [datetime.strptime(i["created"], "%a, %d %b %Y %H:%M:%S %Z") for i in parsed_line["versions"]]
+            sorted_dates = sorted(updates)
+
+            parsed_line["create_date"] = sorted_dates[0].strftime("%Y-%m-%d")
+            parsed_line["update_date"] = sorted_dates[-1].strftime("%Y-%m-%d")
 
             # abstract is fucked up for sure
             parsed_line["abstract"] = self.fix_text(parsed_line["abstract"])
@@ -201,13 +214,31 @@ class Writer(Process):
                 file.write(json.dumps(line) + "\n")
 
 
-def setup_bases(path_to_dump: Path, force: bool = False):
-    engine = setup_database()
-    elastic = setup_elastic()
+def setup_categories(engine: Engine, logger: Logger, path_to_categories: Path, force: int = 0):
+    logger.info("Setting up categories...")
 
-    logger = setup_logger()
-    logger.setLevel("DEBUG")
+    with Session(engine) as session:
+        count = session.exec(func.count(col(ArxivCategoriesModel.id))).first()[0]
+        logger.debug(f"Found {count} categories in postgres")
 
+    if force == 0 and count > 0:
+        logger.info("Categories already exist, skipping setup")
+        return
+
+    SQLModel.metadata.drop_all(engine, [SQLModel.metadata.tables["arxiv_categories"]])
+    SQLModel.metadata.create_all(engine, [SQLModel.metadata.tables["arxiv_categories"]])
+
+    logger.info("Inserting categories into postgres")
+
+    with open(path_to_categories, "r") as file:
+        categories = [ArxivCategoriesModel(**i) for i in DictReader(file, delimiter=";")]
+
+    with Session(engine) as session:
+        session.bulk_save_objects(categories)
+        session.commit()
+
+
+def setup_bases(engine: Engine, elastic: Elasticsearch, logger: Logger, path_to_dump: Path, force: int = 0):
     logger.info("Setting up bases...")
 
     logger.info("Checking whether data already exists in both databases")
@@ -220,12 +251,12 @@ def setup_bases(path_to_dump: Path, force: bool = False):
         logger.debug(f"Postgres amount: {postgres_amount}")
         logger.debug(f"Elastic amount: {elastic_amount}")
 
-        if elastic_amount == postgres_amount and postgres_amount > 0 and force == 0:
-            logger.info("Data already exists in both databases, skipping setup")
-            return
-
     except Exception as e:
         logger.error(f"Error while checking elasticsearch: {e}")
+
+    if elastic_amount == postgres_amount and postgres_amount > 0 and force == 0:
+        logger.info("Data already exists in both databases, skipping setup")
+        return
 
     logger.debug("Clearing existing data in elasticsearch")
     if elastic.indices.exists(index="arxiv"):
@@ -233,8 +264,8 @@ def setup_bases(path_to_dump: Path, force: bool = False):
 
     elastic.indices.create(index="arxiv", mappings=index_mapping)
 
-    SQLModel.metadata.drop_all(engine)
-    SQLModel.metadata.create_all(engine)
+    SQLModel.metadata.drop_all(engine, [SQLModel.metadata.tables["arxiv_papers"]])
+    SQLModel.metadata.create_all(engine, [SQLModel.metadata.tables["arxiv_papers"]])
 
     logger.info("Starting to parse lines")
     result_path = path_to_dump.with_name("arxiv-processed.jsonl")
@@ -286,8 +317,8 @@ def setup_bases(path_to_dump: Path, force: bool = False):
             file.seek(0)
             for i, batch in tqdm(enumerate(batched(file, (length // parts) + 1)), total=parts, position=pos):
                 with Session(engine) as session:
-                    for entry in batch:
-                        session.add(ArxivPaperModel(**do_postgres_fixes(json.loads(entry))))
+                    objs = [ArxivPaperModel(**do_postgres_fixes(json.loads(entry))) for entry in batch]
+                    session.add_all(objs)
                     session.commit()
 
                 logger.debug(f"Inserted {(i + 1)/ parts * 100:.2f}% of data into postgres")
@@ -315,6 +346,19 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
+        "--path-to-categories",
+        type=Path,
+        default=Path("categories.csv"),
+        help="Path to the categories file",
+    )
+
+    parser.add_argument(
+        "" "--categories-only",
+        action="store_true",
+        help="Only setup categories, not papers",
+    )
+
+    parser.add_argument(
         "--force",
         "-f",
         action="count",
@@ -326,4 +370,13 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    setup_bases(args.path, force=args.force)
+    engine = setup_database()
+    elastic = setup_elastic()
+    logger = setup_logger()
+    logger.setLevel("DEBUG")
+
+    setup_categories(engine, logger, args.path_to_categories, force=args.force)
+    if args.categories_only:
+        exit(0)
+
+    setup_bases(engine, elastic, logger, args.path, force=args.force)
