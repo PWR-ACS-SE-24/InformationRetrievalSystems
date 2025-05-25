@@ -45,18 +45,11 @@ def search(
         additional_musts.append({"exists": {"field": "refid"}})
 
     if search_query.subject:
-        cats = []
-        for search_subject, subcategories in search_query.subject.items():
-            if not subcategories:
-                continue
-
-            cats.extend([f"{search_subject}.{subcat}" for subcat in subcategories])
-
         # match any of the subcategories
         additional_musts.append(
             {
                 "terms": {
-                    "categories": cats,
+                    "categories": search_query.subject,
                 }
             }
         )

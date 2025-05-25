@@ -1,7 +1,6 @@
 import typing as t
 from collections import defaultdict
 
-from sqlalchemy import Engine
 from sqlmodel import Session, select
 
 from arxivsearch.database.arxiv import ArxivCategoriesModel
@@ -14,15 +13,22 @@ parsed_categories: t.Optional[t.Dict[str, t.Any]] = None
 
 def get_categories() -> t.Dict[str, t.Any]:
     if parsed_categories is None:
-        raise ValueError("Categories have not been preloaded. Call preload_categories first.")
+        logger.debug("Categories not preloaded, loading now...")
+        preload_categories()
 
     return parsed_categories
 
 
-def preload_categories(engine: Engine):
+def preload_categories():
     global parsed_categories
 
-    with Session(engine) as session:
+    if parsed_categories is not None:
+        logger.debug("Categories already preloaded, skipping.")
+        return
+
+    import arxivsearch.database
+
+    with Session(arxivsearch.database._engine) as session:
         logger.debug("Preloading categories...")
         with session.exec(select(ArxivCategoriesModel)) as result:
             found_categories = result.all()
