@@ -87,6 +87,14 @@ def search(
                 "size": 10,
             }
         },
+        "year-agg": {
+            "date_range": {
+                "field": "update_date",
+                "format": "yyyy",
+                "ranges": [{"from": i, "to": i + 1} for i in range(search_query.year_start, search_query.year_end + 1)],
+                # "ranges": [{"from": search_query.year_start, "to": search_query.year_end}],
+            }
+        },
     }
 
     # execute query
@@ -122,6 +130,7 @@ def search(
 
     categories_facets = result["aggregations"]["categories-agg"]["buckets"]
     author_facets = result["aggregations"]["authors-agg"]["buckets"]
+    year_facets = result["aggregations"]["year-agg"]["buckets"]
 
     all_facets = [
         *[
@@ -131,7 +140,15 @@ def search(
         *[FacetByResult(field="authors", value=facet["key"], count=facet["doc_count"]) for facet in author_facets],
     ]
 
+    years = {
+        str(facet["from_as_string"]): facet["doc_count"] for facet in year_facets if facet["from_as_string"] is not None
+    }
+
     # prepare response
     return SearchResponse(
-        time_to_search=time_to_search, total=total_hits, papers=paper_map.values(), available_facets=all_facets
+        time_to_search=time_to_search,
+        total=total_hits,
+        papers=paper_map.values(),
+        available_facets=all_facets,
+        found_per_year=years,
     )

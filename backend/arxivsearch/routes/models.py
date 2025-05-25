@@ -11,7 +11,10 @@ PossibleFacets = t.Literal["categories", "authors"]
 
 CURRENT_YEAR = date.today().year
 
-logger = get_logger("search_query")
+logger = get_logger("arxiv_models")
+
+# TODO: categories model
+# class CategoryModel(BaseModel):
 
 
 # this is kinda overkill, cos we send "field" value multiple times
@@ -82,3 +85,5 @@ class SearchResponse(BaseModel):
     papers: t.List[ArxivPaperModelBase] = Field(..., description="List of papers found in the search")
 
     available_facets: t.List[FacetByResult] = Field(..., description="Facets available for the search")
+
+    found_per_year: t.Dict[int, int] = Field(..., description="Number of papers found per year")
