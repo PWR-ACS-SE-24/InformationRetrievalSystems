@@ -20,7 +20,6 @@
 <div class="">
   <h1 class="text-2xl font-bold">{paper.title}</h1>
 
-  <!-- To make <p> inside next to each other, first aligned to the left, second to the right -->
   <div class="flex justify-between">
     <p>
       <span class="font-bold">Authors:</span>
