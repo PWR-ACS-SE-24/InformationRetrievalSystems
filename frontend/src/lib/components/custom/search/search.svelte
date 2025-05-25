@@ -145,7 +145,7 @@
         {#each multiLevelSubjects as category}
           <DropdownMenu.Sub>
             <DropdownMenu.SubTrigger>
-              <span class={isAnyChecked(category.id) ? "font-bold" : ""}>
+              <span class={isAnyChecked(category.id) ? "font-medium" : ""}>
                 {category.name}
               </span>
             </DropdownMenu.SubTrigger>
@@ -158,7 +158,7 @@
                   toggleAll(category.id, !isAllChecked(category.id));
                 }}
               >
-                <span class="font-semibold">Check all</span>
+                <span class="font-medium">Check all</span>
               </DropdownMenu.CheckboxItem>
 
               <DropdownMenu.Separator />
