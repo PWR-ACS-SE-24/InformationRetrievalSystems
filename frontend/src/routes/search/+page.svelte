@@ -1,6 +1,8 @@
 <script lang="ts">
+  import * as Card from "$lib/components/ui/card";
   import * as Pagination from "$lib/components/ui/pagination";
   import type { PageProps } from "./$types";
+  import { Facets } from "$lib/components/custom/facets";
   import { Paper } from "$lib/components/custom/paper";
   import { Search } from "$lib/components/custom/search";
   import { Separator } from "$lib/components/ui/separator";
@@ -21,15 +23,30 @@
   </div>
 
   <div class="flex flex-grow gap-4 p-4">
-    <div class="w-1/6 bg-slate-200">
-      <center>
-        <p>
-          Results: {data.pagination.total_records
-            .toString()
-            .replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
-        </p>
-        <p>Search time: {(data.time_to_search / 1000).toFixed(2)}s</p>
-      </center>
+    <div class="w-1/6 p-4">
+      <Card.Root>
+        <Card.Content class="text-sm font-medium text-center">
+          <p>
+            Results: <span class="font-normal"
+              >{data.pagination.total_records
+                .toString()
+                .replace(/\B(?=(\d{3})+(?!\d))/g, ",")}</span
+            >
+          </p>
+          <p>
+            Search time: <span class="font-normal">
+              {(data.time_to_search / 1000).toFixed(2)}s</span
+            >
+          </p>
+        </Card.Content>
+      </Card.Root>
+
+      <div class="mt-4">
+        <Facets name="Subjects" content={data.categories} />
+      </div>
+      <div class="mt-4">
+        <Facets name="Authors" content={data.authors} />
+      </div>
     </div>
 
     <div class="w-4/6 overflow-auto">

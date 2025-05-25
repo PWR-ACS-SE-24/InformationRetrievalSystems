@@ -62,12 +62,14 @@ export const load: PageLoad = async ({ url, parent }) => {
   const categories = available_facets
     .filter((facet) => facet.field === "categories")
     .map((facet) => ({
+      displayValue: translateCategories([facet.value], subjects)[0],
       value: facet.value,
       count: facet.count,
     }));
   const authors = available_facets
     .filter((facet) => facet.field === "authors")
     .map((facet) => ({
+      displayValue: facet.value,
       value: facet.value,
       count: facet.count,
     }));
