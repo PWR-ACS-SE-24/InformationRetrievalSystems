@@ -72,18 +72,34 @@ class FacetByResult(FacetBy):
         }
 
 
+class Pagination(BaseModel):
+    total_records: int = Field(..., description="Total number of results")
+    total_pages: int = Field(..., description="Total number of pages")
+
+    current_page: int = Field(..., description="Current page number")
+    size: int = Field(..., description="Number of results per page")
+
+    class Config:
+        json_schema_extra = {
+            "total_records": 1000,
+            "total_pages": 100,
+            "current_page": 1,
+            "size": 10,
+        }
+
+
 class SearchQuery(BaseModel):
     search: str = Field(..., description="Search term to query", min_length=1, max_length=100)
 
     author: str | None = Field(None, description="Author name to search for")
-    subject: t.Dict[str, t.List[str]] | None = Field({}, description="Subject categories to search in")
+    subject: t.List[str] | None = Field([], description="Subject categories to search in")
 
     year_start: int = Field(
         MINIMUM_YEAR, ge=MINIMUM_YEAR, le=CURRENT_YEAR, description="Year range start for the search"
     )
     year_end: int = Field(CURRENT_YEAR, ge=MINIMUM_YEAR, le=CURRENT_YEAR, description="Year range end for the search")
 
-    published: bool = Field(False, description="Only return open access papers")
+    published: bool = Field(False, description="Only return papers that have been published (have a DOI)")
 
     facet_by: t.List[FacetBy] | None = Field([], description="Set facets to search in", max_length=10)
 
@@ -100,20 +116,20 @@ class SearchQuery(BaseModel):
 
         parsed_categories = get_categories()
 
-        if not all([k in parsed_categories for k in self.subject.keys()]):
+        # TODO: we shouldn't create this set every time, but rather cache it
+        valid_categories = {
+            subcat["id"] for cat in parsed_categories.values() for subcat in cat["subcategories"].values()
+        }
+        valid_categories.update(parsed_categories.keys())
+
+        if not all([subject in valid_categories for subject in self.subject]):
             raise ValueError("Invalid subject categories provided")
-
-        for cat, subcats in self.subject.items():
-            logger.debug(f"Checking subcategories: {cat}")
-            if not all([subcat in parsed_categories[cat]["subcategories"] for subcat in subcats]):
-                raise ValueError(f"Invalid subject subcategories provided, offending category: {cat}")
-
         return self
 
 
 class SearchResponse(BaseModel):
+    pagination: Pagination = Field(..., description="Pagination information for the search results")
     time_to_search: int = Field(..., description="Time taken to search in ms")
-    total: int = Field(..., description="Total number of results")
 
     papers: t.List[ArxivPaperModelBase] = Field(..., description="List of papers found in the search")
 

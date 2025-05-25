@@ -1,6 +1,7 @@
 import typing as t
 
 from fastapi import FastAPI
+from sqlalchemy import Engine
 
 import arxivsearch.config as config
 from arxivsearch.logger import setup_logger
@@ -14,15 +15,12 @@ from arxivsearch.routes import routers
 
 
 def create_app() -> FastAPI:
-    global _engine
 
     logger.info("Hello from arxivsearch, starting up...")
     app = FastAPI(redirect_slashes=False, debug=config.DEBUG)
 
     app.state.engine_database = setup_database()
     app.state.engine_elasticsearch = setup_elastic()
-
-    preload_categories(app.state.engine_database)
 
     for router in routers:
         logger.debug(f"Registering router: /api{router.prefix}")

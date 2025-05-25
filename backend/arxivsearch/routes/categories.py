@@ -17,13 +17,6 @@ def _normalize_category(d: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
     )
 
 
-#         {
-#         "id": d["id"],
-#         "name": d["name"],
-#         "subcategories": list(d["subcategories"].values()),
-#     }
-
-
 @categories_router.get("", response_model=t.List[CategoryModel])
 async def get_human_categories():
     logger.debug("Getting all categories")

@@ -10,7 +10,12 @@ from arxivsearch.database import SessionDep
 from arxivsearch.database.arxiv import ArxivPaperModel
 from arxivsearch.elastic import ElasticDep
 from arxivsearch.logger import get_logger
-from arxivsearch.routes.models import FacetByResult, SearchQuery, SearchResponse
+from arxivsearch.routes.models import (
+    FacetByResult,
+    Pagination,
+    SearchQuery,
+    SearchResponse,
+)
 
 logger = get_logger("search")
 search_router = APIRouter(prefix="/search", tags=["search"])
@@ -21,8 +26,8 @@ def search(
     search_query: SearchQuery,
     session: SessionDep,
     elastic: ElasticDep,
-    skip: t.Annotated[int, Query(ge=0, description="Skip n first results")] = 0,
-    limit: t.Annotated[int, Query(ge=1, description="Limit results")] = 30,
+    page: t.Annotated[int, Query(ge=0, description="Skip n first results")] = 0,
+    perpage: t.Annotated[int, Query(ge=1, lte=30, description="Limit results")] = 30,
 ):
 
     date_start = date(search_query.year_start, 1, 1)
@@ -40,18 +45,11 @@ def search(
         additional_musts.append({"exists": {"field": "refid"}})
 
     if search_query.subject:
-        cats = []
-        for search_subject, subcategories in search_query.subject.items():
-            if not subcategories:
-                continue
-
-            cats.extend([f"{search_subject}.{subcat}" for subcat in subcategories])
-
         # match any of the subcategories
         additional_musts.append(
             {
                 "terms": {
-                    "categories": cats,
+                    "categories": search_query.subject,
                 }
             }
         )
@@ -92,14 +90,19 @@ def search(
                 "field": "update_date",
                 "format": "yyyy",
                 "ranges": [{"from": i, "to": i + 1} for i in range(search_query.year_start, search_query.year_end + 1)],
-                # "ranges": [{"from": search_query.year_start, "to": search_query.year_end}],
             }
         },
     }
 
     # execute query
     result = elastic.search(
-        index="arxiv", sort={"_score": {"order": "desc"}}, query=query, size=limit, from_=skip, aggs=aggs
+        index="arxiv",
+        sort={"_score": {"order": "desc"}},
+        query=query,
+        size=perpage,
+        from_=perpage * page,
+        aggs=aggs,
+        track_total_hits=True,
     )
 
     # parse result
@@ -144,10 +147,17 @@ def search(
         str(facet["from_as_string"]): facet["doc_count"] for facet in year_facets if facet["from_as_string"] is not None
     }
 
+    pagination = Pagination(
+        total_records=total_hits,
+        total_pages=(total_hits // perpage) + (total_hits % perpage > 0),
+        current_page=page,
+        size=len(hits),
+    )
+
     # prepare response
     return SearchResponse(
+        pagination=pagination,
         time_to_search=time_to_search,
-        total=total_hits,
         papers=paper_map.values(),
         available_facets=all_facets,
         found_per_year=years,
