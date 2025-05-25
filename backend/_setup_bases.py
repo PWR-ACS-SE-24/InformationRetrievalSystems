@@ -1,5 +1,6 @@
 import argparse
 import json
+import locale
 import time
 import typing as t
 from csv import DictReader
@@ -35,6 +36,7 @@ index_mapping = {
         "categories": {"type": "keyword"},
         "abstract": {"type": "text"},
         "update_date": {"type": "date", "format": "yyyy-MM-dd"},
+        "create_date": {"type": "date", "format": "yyyy-MM-dd"},
     }
 }
 
@@ -47,10 +49,8 @@ def do_elastic_fixes(line: dict) -> dict:
 def do_postgres_fixes(line: dict) -> dict:
     # we want to parse date it from YYYY-mm-dd to date
     line["update_date"] = datetime.strptime(line["update_date"], "%Y-%m-%d")
+    line["create_date"] = datetime.strptime(line["create_date"], "%Y-%m-%d")
     line["arxiv_id"] = line.pop("id")
-
-    # we update in place, so we need to be careful not to overwrite the data
-    # before its inserted into elastic
     return line
 
 
@@ -97,11 +97,14 @@ class Processor(Process):
         super().__init__(*args, **kwargs)
         self.reader_queue = reader_queue
         self.writer_queue = writer_queue
+        locale.setlocale(locale.LC_ALL, "en_US.UTF-8")
         self.latex_context = LatexNodes2Text()
 
     def fix_text(self, content: str) -> str:
+        # text defucker 3001
         content = str(self.latex_context.latex_to_text(content))
-        return content.replace("\n", " ")
+        content = content.replace("\n", " ")
+        return " ".join([i for i in content.split(" ") if len(i) > 0])  # remove multiple spaces
 
     def process(self, parsed_line: dict) -> dict:
 
@@ -146,6 +149,13 @@ class Processor(Process):
                     parsed_categories.add(category)
 
             parsed_line["categories"] = list(parsed_categories)
+
+            # extract create_date
+            updates = [datetime.strptime(i["created"], "%a, %d %b %Y %H:%M:%S %Z") for i in parsed_line["versions"]]
+            sorted_dates = sorted(updates)
+
+            parsed_line["create_date"] = sorted_dates[0].strftime("%Y-%m-%d")
+            parsed_line["update_date"] = sorted_dates[-1].strftime("%Y-%m-%d")
 
             # abstract is fucked up for sure
             parsed_line["abstract"] = self.fix_text(parsed_line["abstract"])
@@ -307,8 +317,8 @@ def setup_bases(engine: Engine, elastic: Elasticsearch, logger: Logger, path_to_
             file.seek(0)
             for i, batch in tqdm(enumerate(batched(file, (length // parts) + 1)), total=parts, position=pos):
                 with Session(engine) as session:
-                    for entry in batch:
-                        session.add(ArxivPaperModel(**do_postgres_fixes(json.loads(entry))))
+                    objs = [ArxivPaperModel(**do_postgres_fixes(json.loads(entry))) for entry in batch]
+                    session.add_all(objs)
                     session.commit()
 
                 logger.debug(f"Inserted {(i + 1)/ parts * 100:.2f}% of data into postgres")

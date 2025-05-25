@@ -25,6 +25,8 @@ class ArxivPaperModelBase(SQLModel):
 
     # useless
     comments: str | None = Field(default=None)
+
+    create_date: datetime = Field(nullable=False)
     update_date: datetime = Field(nullable=False)
 
     class Config:
