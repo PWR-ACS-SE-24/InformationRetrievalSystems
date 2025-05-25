@@ -27,7 +27,7 @@ services:
 
     environment:
       - DATABASE_URL=postgresql+psycopg://arxivsearch:arxivsearch@postgres:5432/arxivsearch
-      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - ELASTIC_URL=http://elasticsearch:9200
       - DEBUG=1
       - LOGGER_LEVEL=10
 

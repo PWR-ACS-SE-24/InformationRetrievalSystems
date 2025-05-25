@@ -31,8 +31,10 @@ function translateCategories(
 export const load: PageLoad = async ({ url, parent }) => {
   const { subjects } = await parent();
 
+  const page = url.searchParams.get("page") ?? "0";
+  const pageSize = url.searchParams.get("page_size") ?? "10";
   const q = url.searchParams.get("q") ?? "";
-  const author = url.searchParams.get("author") ?? "";
+  const author = url.searchParams.get("author") ?? null;
   const published = url.searchParams.get("published") === "true";
   const minYear = url.searchParams.get("min_year");
   const maxYear = url.searchParams.get("max_year");
@@ -48,9 +50,9 @@ export const load: PageLoad = async ({ url, parent }) => {
     }
   }
 
-  // TODO: Call to API
+  // TODO: Call to API, for now we use the mock response
   const time_to_search = response.time_to_search;
-  const total = response.total;
+  const pagination = response.pagination;
   // const papers = response.papers;
   const papers = response.papers.map((paper) => ({
     ...paper,
@@ -71,6 +73,7 @@ export const load: PageLoad = async ({ url, parent }) => {
     }));
 
   return {
+    rawQuery: url.searchParams.toString(),
     q,
     author,
     published,
@@ -78,7 +81,7 @@ export const load: PageLoad = async ({ url, parent }) => {
     maxYear: maxYear,
     selectedSubjects,
     time_to_search,
-    total,
+    pagination,
     papers,
     categories,
     authors,
