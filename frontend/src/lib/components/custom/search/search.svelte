@@ -94,8 +94,9 @@
     if (minYear) params.set("min_year", minYear().toString());
     if (maxYear) params.set("max_year", maxYear().toString());
 
-    const selectedJSON = JSON.stringify(selectedSubjects);
-    if (Object.keys(selectedSubjects).length > 0) {
+    const subjectsArray = Array.from(selectedSubjects);
+    if (subjectsArray.length > 0) {
+      const selectedJSON = JSON.stringify(subjectsArray);
       params.set("subjects", encodeURIComponent(selectedJSON));
     }
 
