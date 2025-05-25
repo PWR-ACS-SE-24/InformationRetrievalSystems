@@ -72,11 +72,27 @@ class FacetByResult(FacetBy):
         }
 
 
+class Pagination(BaseModel):
+    total_records: int = Field(..., description="Total number of results")
+    total_pages: int = Field(..., description="Total number of pages")
+
+    current_page: int = Field(..., description="Current page number")
+    size: int = Field(..., description="Number of results per page")
+
+    class Config:
+        json_schema_extra = {
+            "total_records": 1000,
+            "total_pages": 100,
+            "current_page": 1,
+            "size": 10,
+        }
+
+
 class SearchQuery(BaseModel):
     search: str = Field(..., description="Search term to query", min_length=1, max_length=100)
 
     author: str | None = Field(None, description="Author name to search for")
-    subject: t.Dict[str, t.List[str]] | None = Field({}, description="Subject categories to search in")
+    subject: t.List[str] | None = Field({}, description="Subject categories to search in")
 
     year_start: int = Field(
         MINIMUM_YEAR, ge=MINIMUM_YEAR, le=CURRENT_YEAR, description="Year range start for the search"
@@ -112,8 +128,8 @@ class SearchQuery(BaseModel):
 
 
 class SearchResponse(BaseModel):
+    pagination: Pagination = Field(..., description="Pagination information for the search results")
     time_to_search: int = Field(..., description="Time taken to search in ms")
-    total: int = Field(..., description="Total number of results")
 
     papers: t.List[ArxivPaperModelBase] = Field(..., description="List of papers found in the search")
 
