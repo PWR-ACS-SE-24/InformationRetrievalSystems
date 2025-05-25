@@ -30,6 +30,7 @@ services:
       - ELASTICSEARCH_URL=http://elasticsearch:9200
       - DEBUG=1
       - LOGGER_LEVEL=10
+      - CORS=http://localhost:3000
 
     ports:
       - "2137:2137"
