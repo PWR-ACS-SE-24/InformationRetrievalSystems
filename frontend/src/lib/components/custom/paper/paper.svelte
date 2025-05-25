@@ -12,6 +12,7 @@
     journal_ref: string | null;
     comments: string;
     update_date: string;
+    create_date: string;
   };
 
   const { paper } = $props<{ paper: ArxivEntry }>();
@@ -28,7 +29,7 @@
       {/each}
     </p>
 
-    <p class="font-bold ml-4">{paper.update_date.substring(0, 4)}</p>
+    <p class="font-bold ml-4">{paper.create_date.substring(0, 4)}</p>
   </div>
 
   <p>

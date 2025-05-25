@@ -177,29 +177,6 @@
             </DropdownMenu.SubContent>
           </DropdownMenu.Sub>
         {/each}
-
-        <DropdownMenu.Separator />
-
-        {#each singleLevelSubjects as category}
-          <DropdownMenu.Sub>
-            <DropdownMenu.CheckboxItem
-              class="Item"
-              checked={isChecked(category.id)}
-              on:click={(e) => {
-                e.preventDefault();
-                toggleCat(category.id);
-              }}
-            >
-              <span
-                class={isAnyChecked(category.id)
-                  ? "font-bold"
-                  : "font-semibold"}
-              >
-                {category.name}
-              </span>
-            </DropdownMenu.CheckboxItem>
-          </DropdownMenu.Sub>
-        {/each}
       </DropdownMenu.Content>
     </DropdownMenu.Root>
   </div>
