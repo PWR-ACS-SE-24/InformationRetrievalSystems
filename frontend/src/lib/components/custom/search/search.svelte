@@ -25,12 +25,6 @@
   const { availableSubjects = [] }: { availableSubjects: AvailableSubjects } =
     $props();
 
-  // whether this should be explicitly defined or not is a matter of debate
-  // this could be an anonymous value in {#each} block
-  const singleLevelSubjects: SubjectCategory[] = availableSubjects.filter(
-    (cat) => cat.subcategories.length === 0
-  );
-
   const multiLevelSubjects: SubjectCategory[] = availableSubjects.filter(
     (cat) => cat.subcategories.length > 0
   );
@@ -94,9 +88,8 @@
     if (minYear) params.set("min_year", minYear().toString());
     if (maxYear) params.set("max_year", maxYear().toString());
 
-    const subjectsArray = Array.from(selectedSubjects);
-    if (subjectsArray.length > 0) {
-      const selectedJSON = JSON.stringify(subjectsArray);
+    if (selectedSubjects.size > 0) {
+      const selectedJSON = JSON.stringify(Array.from(selectedSubjects));
       params.set("subjects", encodeURIComponent(selectedJSON));
     }
 
