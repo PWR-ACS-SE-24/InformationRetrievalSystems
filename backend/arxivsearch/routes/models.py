@@ -10,11 +10,42 @@ from arxivsearch.logger import get_logger
 PossibleFacets = t.Literal["categories", "authors"]
 
 CURRENT_YEAR = date.today().year
+MINIMUM_YEAR = 1986  # SELECT create_date FROM arxiv_papers ORDER BY create_date ASC LIMIT 1;
 
 logger = get_logger("arxiv_models")
 
-# TODO: categories model
-# class CategoryModel(BaseModel):
+
+class SubcategoryModel(BaseModel):
+    id: str = Field(..., description="ID of the subcategory")
+    name: str = Field(..., description="Human-friendly name of the subcategory")
+
+    class Config:
+        json_schema_extra = {
+            "id": "cs.AI",
+            "name": "Artificial Intelligence",
+        }
+
+
+class CategoryModel(BaseModel):
+    id: str = Field(..., description="ID of the category")
+    name: str = Field(..., description="Human-friendly name of the category")
+    subcategories: t.List[SubcategoryModel] = Field(..., description="List of subcategories in this category")
+
+    class Config:
+        json_schema_extra = {
+            "id": "cs",
+            "name": "Computer Science",
+            "subcategories": [
+                {
+                    "id": "cs.AI",
+                    "name": "Artificial Intelligence",
+                },
+                {
+                    "id": "cs.CV",
+                    "name": "Computer Vision",
+                },
+            ],
+        }
 
 
 # this is kinda overkill, cos we send "field" value multiple times
@@ -47,8 +78,10 @@ class SearchQuery(BaseModel):
     author: str | None = Field(None, description="Author name to search for")
     subject: t.Dict[str, t.List[str]] | None = Field({}, description="Subject categories to search in")
 
-    year_start: int = Field(2000, ge=2000, le=CURRENT_YEAR, description="Year range start for the search")
-    year_end: int = Field(CURRENT_YEAR, ge=2000, le=CURRENT_YEAR, description="Year range end for the search")
+    year_start: int = Field(
+        MINIMUM_YEAR, ge=MINIMUM_YEAR, le=CURRENT_YEAR, description="Year range start for the search"
+    )
+    year_end: int = Field(CURRENT_YEAR, ge=MINIMUM_YEAR, le=CURRENT_YEAR, description="Year range end for the search")
 
     published: bool = Field(False, description="Only return open access papers")
 
