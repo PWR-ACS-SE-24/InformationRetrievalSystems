@@ -18,10 +18,16 @@ def create_app() -> FastAPI:
 
     app.state.engine_database = setup_database()
     app.state.engine_elasticsearch = setup_elastic()
+    
+    origins = [
+        "http://localhost",
+        "http://localhost:3000",
+        "http://localhost:5173",
+    ]
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=config.CORS,
+        allow_origins=origins,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],

@@ -1,34 +1,21 @@
+export const ssr = false;
+
+import type { CategoryModel } from "$lib/types";
 import type { LayoutLoad } from "./$types";
-import type { components } from "$lib/generated/backend-openapi";
-import { subjects } from "$lib/subjects";
-type CategoryModel = components["schemas"]["CategoryModel"];
+import { processSubjects } from "$lib/helpers";
 
-function processSubjects(subjects: CategoryModel[]): CategoryModel[] {
-  const [withSubcategories, withoutSubcategories] = subjects.reduce(
-    ([withSubs, withoutSubs], subject) =>
-      subject.subcategories.length > 0
-        ? [[...withSubs, subject], withoutSubs]
-        : [withSubs, [...withoutSubs, subject]],
-    [[], []] as [CategoryModel[], CategoryModel[]]
-  );
+export const load = (async ({ fetch }) => {
+  const data = (await fetch("http://localhost:2137/api/categories")
+    .then((res) => res.json())
+    .then((data) => {
+      if (data?.error) {
+        console.error("Error fetching categories:", data.error);
+        return [];
+      }
+      return processSubjects(data as CategoryModel[]);
+    })) as CategoryModel[];
 
-  return withoutSubcategories.length === 0
-    ? withSubcategories
-    : [
-        ...withSubcategories,
-        {
-          id: "others",
-          name: "Others",
-          subcategories: withoutSubcategories.map(({ id, name }) => ({
-            id,
-            name,
-          })),
-        },
-      ];
-}
-
-export const load = (async () => {
   return {
-    subjects: processSubjects(subjects), // This allows to easily swap it to backend call later
+    subjects: data,
   };
 }) satisfies LayoutLoad;

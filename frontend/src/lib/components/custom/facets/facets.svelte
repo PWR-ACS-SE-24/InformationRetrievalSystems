@@ -15,12 +15,17 @@
   <Card.Content>
     <div>
       {#each content as item}
-        <Button variant="ghost" class="w-full text-sm">
-          <div class="flex justify-between w-full">
-            <span class="break-words whitespace-normal text-left"
+        <Button
+          variant="ghost"
+          class="w-full text-sm h-auto py-2 whitespace-normal"
+        >
+          <div class="flex justify-between w-full text-left">
+            <span class="break-words whitespace-normal"
               >{item.displayValue}</span
             >
-            <span class="text-right text-gray-500 ml-2">({item.count})</span>
+            <span class="text-right text-gray-500 ml-2 shrink-0"
+              >({item.count})</span
+            >
           </div>
         </Button>
       {/each}

@@ -1,7 +1,7 @@
 services:
   print-status:
     image: busybox
-    command: 'sh -c ''echo -e "--------------------------------------------\n|                                          |\n|   App started: \"http://localhost:1337\"   |\n|                                          |\n--------------------------------------------"'''
+    command: 'sh -c ''echo -e "--------------------------------------------\n|                                          |\n|   App started: \"http://localhost:3000\"   |\n|                                          |\n--------------------------------------------"'''
     depends_on:
       - frontend
 
@@ -14,7 +14,7 @@ services:
       - BACKEND_URL=http://backend:2137
 
     ports:
-      - "1337:3000"
+      - "3000:3000"
 
     depends_on:
       backend:
@@ -30,7 +30,6 @@ services:
       - ELASTIC_URL=http://elasticsearch:9200
       - DEBUG=1
       - LOGGER_LEVEL=10
-      - CORS=http://localhost:3000
 
     ports:
       - "2137:2137"
