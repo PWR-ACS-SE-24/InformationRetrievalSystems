@@ -1,12 +1,13 @@
 <script lang="ts">
-  import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
-  import RangeSlider from "svelte-range-slider-pips";
+  import { goto } from "$app/navigation";
   import { Button } from "$lib/components/ui/button/index.js";
   import { Checkbox } from "$lib/components/ui/checkbox/index.js";
+  import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
   import { Input } from "$lib/components/ui/input/index.js";
   import { Label } from "$lib/components/ui/label/index.js";
-  import { Search, ChevronDown } from "lucide-svelte";
-  import { goto } from "$app/navigation";
+  import { ChevronDown, Search } from "lucide-svelte";
+  import RangeSlider from "svelte-range-slider-pips";
+  import { SvelteSet } from "svelte/reactivity";
 
   type Subcategory = {
     id: string;
@@ -23,6 +24,17 @@
 
   const { availableSubjects = [] }: { availableSubjects: AvailableSubjects } =
     $props();
+
+  // whether this should be explicitly defined or not is a matter of debate
+  // this could be an anonymous value in {#each} block
+  const singleLevelSubjects: SubjectCategory[] = availableSubjects.filter(
+    (cat) => cat.subcategories.length === 0
+  );
+
+  const multiLevelSubjects: SubjectCategory[] = availableSubjects.filter(
+    (cat) => cat.subcategories.length > 0
+  );
+
   const min = 1986; // extracted from dataset by script in /analysis/test.py that probably works just fine
   const max = new Date().getFullYear();
 
@@ -30,45 +42,46 @@
   let author = $state("");
   let checked = $state(false);
   let values = $state([min, max]);
-  let selectedSubjects: { [key: string]: string[] } = $state({});
+  let selectedSubjects = $state(new SvelteSet<string>());
   let minYear = $derived(() => values[0]);
   let maxYear = $derived(() => values[1]);
 
-  for (const subject of availableSubjects) {
-    selectedSubjects[subject.id] = [];
-  }
-
-  function isChecked(categoryId: string, subId: string) {
-    return selectedSubjects[categoryId].includes(subId);
+  function isChecked(categoryId: string) {
+    const value = selectedSubjects.has(categoryId);
+    return value;
   }
 
   function isAnyChecked(categoryId: string) {
-    return selectedSubjects[categoryId].length > 0;
+    const cat = availableSubjects.find((c) => c.id === categoryId);
+    if (!cat) return false;
+    return cat.subcategories.some((sub) => selectedSubjects.has(sub.id));
   }
 
-  function toggleSub(categoryId: string, subId: string, checked: boolean) {
-    const list = selectedSubjects[categoryId];
-    if (checked && !list.includes(subId)) {
-      selectedSubjects[categoryId] = [...list, subId];
-    } else if (!checked) {
-      selectedSubjects[categoryId] = list.filter((id) => id !== subId);
+  function toggleCat(categoryId: string) {
+    if (isChecked(categoryId)) {
+      selectedSubjects.delete(categoryId);
+    } else {
+      selectedSubjects.add(categoryId);
     }
   }
 
   function isAllChecked(categoryId: string) {
     const cat = availableSubjects.find((c) => c.id === categoryId);
-    return cat?.subcategories.every((sub) =>
-      selectedSubjects[categoryId].includes(sub.id)
-    );
+    if (!cat) return false;
+    return cat.subcategories.every((sub) => selectedSubjects.has(sub.id));
   }
 
   function toggleAll(categoryId: string, checked: boolean) {
     const cat = availableSubjects.find((c) => c.id === categoryId);
     if (!cat) return;
     if (checked) {
-      selectedSubjects[categoryId] = cat.subcategories.map((sub) => sub.id);
+      cat.subcategories.forEach((sub) => {
+        selectedSubjects.add(sub.id);
+      });
     } else {
-      selectedSubjects[categoryId] = [];
+      cat.subcategories.forEach((sub) => {
+        selectedSubjects.delete(sub.id);
+      });
     }
   }
 
@@ -129,7 +142,7 @@
       </DropdownMenu.Trigger>
 
       <DropdownMenu.Content class="w-64">
-        {#each availableSubjects as category}
+        {#each multiLevelSubjects as category}
           <DropdownMenu.Sub>
             <DropdownMenu.SubTrigger>
               <span class={isAnyChecked(category.id) ? "font-bold" : ""}>
@@ -152,20 +165,39 @@
 
               {#each category.subcategories as sub}
                 <DropdownMenu.CheckboxItem
-                  checked={isChecked(category.id, sub.id)}
+                  checked={isChecked(sub.id)}
                   on:click={(e) => {
                     e.preventDefault();
-                    toggleSub(
-                      category.id,
-                      sub.id,
-                      !isChecked(category.id, sub.id)
-                    );
+                    toggleCat(sub.id);
                   }}
                 >
                   {sub.name}
                 </DropdownMenu.CheckboxItem>
               {/each}
             </DropdownMenu.SubContent>
+          </DropdownMenu.Sub>
+        {/each}
+
+        <DropdownMenu.Separator />
+
+        {#each singleLevelSubjects as category}
+          <DropdownMenu.Sub>
+            <DropdownMenu.CheckboxItem
+              class="Item"
+              checked={isChecked(category.id)}
+              on:click={(e) => {
+                e.preventDefault();
+                toggleCat(category.id);
+              }}
+            >
+              <span
+                class={isAnyChecked(category.id)
+                  ? "font-bold"
+                  : "font-semibold"}
+              >
+                {category.name}
+              </span>
+            </DropdownMenu.CheckboxItem>
           </DropdownMenu.Sub>
         {/each}
       </DropdownMenu.Content>

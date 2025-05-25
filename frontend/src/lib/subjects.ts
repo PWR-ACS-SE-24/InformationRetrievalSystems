@@ -57,6 +57,11 @@ export const subjects = [
     ],
   },
   {
+    id: "test",
+    name: "Testing",
+    subcategories: [],
+  },
+  {
     id: "eess",
     name: "Electrical Engineering and Systems Science",
     subcategories: [
