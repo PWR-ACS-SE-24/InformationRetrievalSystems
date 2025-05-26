@@ -1,20 +1,15 @@
 services:
-  print-status:
-    image: busybox
-    command: 'sh -c ''echo -e "--------------------------------------------\n|                                          |\n|   App started: \"http://localhost:3000\"   |\n|                                          |\n--------------------------------------------"'''
-    depends_on:
-      - frontend
-
   frontend:
     build:
       context: frontend
       dockerfile: Dockerfile
 
     environment:
-      - BACKEND_URL=http://backend:2137
+      - NGINX_BACKEND_URL=http://backend:2137
+      - NGINX_SERVER_NAME=arxivsearch
 
     ports:
-      - "3000:3000"
+      - "3000:80"
 
     depends_on:
       backend:
@@ -28,11 +23,9 @@ services:
     environment:
       - DATABASE_URL=postgresql+psycopg://arxivsearch:arxivsearch@postgres:5432/arxivsearch
       - ELASTIC_URL=http://elasticsearch:9200
-      - DEBUG=1
-      - LOGGER_LEVEL=10
-
-    ports:
-      - "2137:2137"
+      - DEBUG=0
+      - LOGGER_LEVEL=20
+      - CORS=http://localhost:3000
 
     healthcheck:
       interval: 10s
@@ -84,16 +77,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-
-  # nginx:
-  #   image: nginx:latest
-  #   ports:
-  #     - "80:80"
-  #   volumes:
-  #     - ./nginx.conf:/etc/nginx/nginx.conf
-  #   depends_on:
-  #     arxivsearch:
-  #       condition: service_healthy
 
 volumes:
   postgres_data:
