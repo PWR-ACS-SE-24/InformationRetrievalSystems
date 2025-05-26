@@ -96,7 +96,9 @@
           <LoaderCircle class="h-10 w-10 animate-spin" />
         </center>
       {:then foundPerYear}
-        <YearChart chartData={foundPerYear} />
+        <div class="mt-4">
+          <YearChart chartData={foundPerYear} />
+        </div>
       {/await}
     </div>
 
