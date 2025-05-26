@@ -9,6 +9,7 @@
   import { Separator } from "$lib/components/ui/separator";
   import { Skeleton } from "$lib/components/ui/skeleton";
   import { goto } from "$app/navigation";
+  import { YearChart } from "$lib/components/custom/year-chart";
 
   let { data }: PageProps = $props();
 
@@ -88,6 +89,14 @@
             rawQuery={data.rawQuery}
           />
         </div>
+      {/await}
+
+      {#await data.foundPerYear}
+        <center class="mt-10">
+          <LoaderCircle class="h-10 w-10 animate-spin" />
+        </center>
+      {:then foundPerYear}
+        <YearChart chartData={foundPerYear} />
       {/await}
     </div>
 
