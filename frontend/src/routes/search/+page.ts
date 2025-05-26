@@ -1,13 +1,14 @@
 export const ssr = false;
 
-import type { PageLoad } from "./$types";
+import { BACKEND_URL } from "$lib";
+import { translateCategories } from "$lib/helpers";
 import type {
-  SearchResponse,
-  SearchQuery,
   FacetBy,
+  SearchQuery,
+  SearchResponse,
   extendedFacetByResult,
 } from "$lib/types";
-import { translateCategories } from "$lib/helpers";
+import type { PageLoad } from "./$types";
 
 export const load: PageLoad = async ({ fetch, url, parent }) => {
   const { subjects } = await parent();
@@ -53,7 +54,7 @@ export const load: PageLoad = async ({ fetch, url, parent }) => {
   } as SearchQuery;
 
   const searchResponse = fetch(
-    `http://localhost:2137/api/search?page=${page}&perpage=${perpage}`,
+    `${BACKEND_URL}/api/search?page=${page}&perpage=${perpage}`,
     {
       method: "POST",
       headers: {
