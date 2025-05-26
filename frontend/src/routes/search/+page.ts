@@ -1,7 +1,12 @@
 export const ssr = false;
 
 import type { PageLoad } from "./$types";
-import type { SearchResponse, SearchQuery } from "$lib/types";
+import type {
+  SearchResponse,
+  SearchQuery,
+  FacetBy,
+  extendedFacetByResult,
+} from "$lib/types";
 import { translateCategories } from "$lib/helpers";
 
 export const load: PageLoad = async ({ fetch, url, parent }) => {
@@ -16,6 +21,7 @@ export const load: PageLoad = async ({ fetch, url, parent }) => {
   const minYear = url.searchParams.get("min_year");
   const maxYear = url.searchParams.get("max_year");
   const subjectsParam = url.searchParams.get("subjects");
+  const facets = url.searchParams.get("facets");
 
   let selectedSubjects: string[] = [];
   if (subjectsParam) {
@@ -23,6 +29,15 @@ export const load: PageLoad = async ({ fetch, url, parent }) => {
       selectedSubjects = JSON.parse(decodeURIComponent(subjectsParam));
     } catch (e) {
       console.error("Invalid subjects param:", e);
+    }
+  }
+
+  let selectedFacets: FacetBy[] = [];
+  if (facets) {
+    try {
+      selectedFacets = JSON.parse(decodeURIComponent(facets));
+    } catch (e) {
+      console.error("Invalid facets param:", e);
     }
   }
 
@@ -34,7 +49,7 @@ export const load: PageLoad = async ({ fetch, url, parent }) => {
     year_start: minYear ? parseInt(minYear, 10) : undefined,
     year_end: maxYear ? parseInt(maxYear, 10) : undefined,
     published: published ? published : false,
-    facet_by: [], // TODO: Implement facets
+    facet_by: selectedFacets && selectedFacets.length > 0 ? selectedFacets : [],
   } as SearchQuery;
 
   const searchResponse = fetch(
@@ -62,21 +77,29 @@ export const load: PageLoad = async ({ fetch, url, parent }) => {
   const categories = availableFacets.then((facets) =>
     facets
       .filter((facet) => facet.field === "categories")
-      .map((facet) => ({
-        displayValue: translateCategories([facet.value], subjects)[0],
-        value: facet.value,
-        count: facet.count,
-      }))
+      .map(
+        (facet) =>
+          ({
+            field: facet.field,
+            displayValue: translateCategories([facet.value], subjects)[0],
+            value: facet.value,
+            count: facet.count,
+          }) as extendedFacetByResult
+      )
   );
 
   const authors = availableFacets.then((facets) =>
     facets
       .filter((facet) => facet.field === "authors")
-      .map((facet) => ({
-        displayValue: facet.value,
-        value: facet.value,
-        count: facet.count,
-      }))
+      .map(
+        (facet) =>
+          ({
+            field: facet.field,
+            displayValue: facet.value,
+            value: facet.value,
+            count: facet.count,
+          }) as extendedFacetByResult
+      )
   );
 
   return {

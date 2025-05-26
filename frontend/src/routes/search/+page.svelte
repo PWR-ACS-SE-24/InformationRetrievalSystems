@@ -66,7 +66,12 @@
         </center>
       {:then categories}
         <div class="mt-4">
-          <Facets name="Subjects" content={categories} />
+          <Facets
+            name="Subjects"
+            field="categories"
+            content={categories}
+            rawQuery={data.rawQuery}
+          />
         </div>
       {/await}
 
@@ -76,7 +81,12 @@
         </center>
       {:then authors}
         <div class="mt-4">
-          <Facets name="Authors" content={authors} />
+          <Facets
+            name="Authors"
+            field="authors"
+            content={authors}
+            rawQuery={data.rawQuery}
+          />
         </div>
       {/await}
     </div>
