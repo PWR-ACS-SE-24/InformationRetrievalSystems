@@ -67,7 +67,7 @@ export const load: PageLoad = async ({ fetch, url, parent }) => {
   const timeToSearch = searchResponse.then((res) => res.time_to_search);
   const pagination = searchResponse.then((res) => res.pagination);
   const availableFacets = searchResponse.then((res) => res.available_facets);
-  const foundPerYear = searchResponse.then((res) => res.found_per_year);
+  const foundPerYearRaw = searchResponse.then((res) => res.found_per_year);
   const papers = searchResponse.then((res) =>
     res.papers.map((paper) => ({
       ...paper,
@@ -101,6 +101,13 @@ export const load: PageLoad = async ({ fetch, url, parent }) => {
             count: facet.count,
           }) as extendedFacetByResult
       )
+  );
+
+  const foundPerYear = foundPerYearRaw.then((data) =>
+    Object.entries(data).map(([year, value]) => ({
+      year,
+      value,
+    }))
   );
 
   return {
