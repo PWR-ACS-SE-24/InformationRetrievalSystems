@@ -40,7 +40,7 @@ cs;GR;Graphics
 cs;GT;Computer Science and Game Theory
 cs;HC;Human-Computer Interaction
 cs;IR;Information Retrieval
-cs;IT;Information Theory
+cs;IT;CS Information Theory
 cs;LG;Machine Learning
 cs;LO;Logic in Computer Science
 cs;MA;Multiagent Systems
@@ -82,7 +82,7 @@ math;GN;General Topology
 math;GR;Group Theory
 math;GT;Geometric Topology
 math;HO;History and Overview
-math;IT;Information Theory
+math;IT;Math Information Theory
 math;KT;K-Theory and Homology
 math;LO;Logic
 math;MG;Metric Geometry

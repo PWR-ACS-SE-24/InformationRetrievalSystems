@@ -66,7 +66,7 @@ def search(
             "filter": [
                 {
                     "range": {
-                        "update_date": {"gte": date_start.strftime("%Y-%m-%d"), "lt": date_end.strftime("%Y-%m-%d")}
+                        "create_date": {"gte": date_start.strftime("%Y-%m-%d"), "lt": date_end.strftime("%Y-%m-%d")}
                     }
                 }
             ],
@@ -87,7 +87,7 @@ def search(
         },
         "year-agg": {
             "date_range": {
-                "field": "update_date",
+                "field": "create_date",
                 "format": "yyyy",
                 "ranges": [{"from": i, "to": i + 1} for i in range(search_query.year_start, search_query.year_end + 1)],
             }

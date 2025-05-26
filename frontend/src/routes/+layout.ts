@@ -1,4 +1,5 @@
 export const ssr = false;
+export const prerender = true;
 
 import { BACKEND_URL } from "$lib";
 import { processSubjects } from "$lib/helpers";
