@@ -186,7 +186,11 @@
 
   <!-- Button -->
   <div class="flex justify-center mt-4">
-    <Button class="px-8 text-xl" on:click={onSearch}>Search</Button>
+    {#if searchQuery}
+      <Button class="px-8 text-xl" on:click={onSearch}>Search</Button>
+    {:else}
+      <Button class="px-8 text-xl" disabled>Search</Button>
+    {/if}
   </div>
 </div>
 
