@@ -107,12 +107,17 @@
 
       {#await data.papers}
         <div class="w-full flex items-center space-x-4 mt-5">
-          <div>
-            <Skeleton class="h-24 w-24 rounded-full bg-slate-800" />
-          </div>
           <div class="space-y-2 w-full">
-            <Skeleton class="h-8 w-[90%] bg-slate-800" />
-            <Skeleton class="h-8 w-[80%] bg-slate-800" />
+            <Skeleton class="h-4 w-[30%] bg-slate-700" />
+            <span class="flex justify-between">
+              <Skeleton class="h-4 w-[40%] bg-slate-700" />
+              <Skeleton class="h-4 w-[5%] bg-slate-700" />
+            </span>
+            <Skeleton class="ml-[1%] h-4 w-[99%] bg-slate-700" />
+            <Skeleton class="ml-[1%] h-4 w-[99%] bg-slate-700" />
+            <Skeleton class="ml-[1%] h-4 w-[99%] bg-slate-700" />
+            <Skeleton class="ml-[1%] h-4 w-[80%] bg-slate-700" />
+            <Skeleton class="h-4 w-[20%] bg-slate-700" />
           </div>
         </div>
       {:then papers}
