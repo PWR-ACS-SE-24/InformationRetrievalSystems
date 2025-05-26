@@ -25,6 +25,8 @@ class ArxivPaperModelBase(SQLModel):
 
     # useless
     comments: str | None = Field(default=None)
+
+    create_date: datetime = Field(nullable=False)
     update_date: datetime = Field(nullable=False)
 
     class Config:
@@ -43,5 +45,13 @@ class ArxivCategoriesModel(SQLModel, table=True):
 
     id: int | None = Field(default=None, primary_key=True)
 
+    # whats displayed on the frontend
+    name: str = Field(nullable=False)
+
+    # this is the actual category name, like cs
     category: str = Field(nullable=False)
-    human_name: str = Field(nullable=False)
+
+    # this is the subcategory, like AI, is only null when category name is a top-level category
+    subcategory: str | None = Field(default=None)
+
+    # TODO: translation, prolly not needed
