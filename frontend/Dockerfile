@@ -18,4 +18,4 @@ FROM nginx:1.28
 
 WORKDIR /app
 COPY --from=builder /app/build .
-COPY nginx.conf /etc/nginx/templates/nginx.conf.template
+COPY nginx.conf /etc/nginx/templates/default.conf.template
