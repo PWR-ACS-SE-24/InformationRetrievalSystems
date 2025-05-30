@@ -42,7 +42,7 @@ def search(
         )
 
     if search_query.published:
-        additional_musts.append({"exists": {"field": "refid"}})
+        additional_musts.append({"exists": {"field": "journal-ref"}})
 
     if search_query.subject:
         # match any of the subcategories
@@ -60,7 +60,13 @@ def search(
     query = {
         "bool": {
             "must": [
-                {"multi_match": {"query": search_query.search, "fields": ["abstract", "title"]}},
+                {
+                    "multi_match": {
+                        "query": search_query.search,
+                        "operator": "and",
+                        "fields": ["abstract", "title"],
+                    }
+                },
                 *additional_musts,
             ],
             "filter": [

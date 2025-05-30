@@ -1,6 +1,6 @@
 export const ssr = false;
 
-import { BACKEND_URL } from "$lib";
+import { BACKEND_URL, YEAR_MAX, YEAR_MIN } from "$lib";
 import { translateCategories } from "$lib/helpers";
 import type {
   FacetBy,
@@ -47,8 +47,8 @@ export const load: PageLoad = async ({ fetch, url, parent }) => {
     author: author ? author : undefined,
     subject:
       selectedSubjects && selectedSubjects.length > 0 ? selectedSubjects : null,
-    year_start: minYear ? parseInt(minYear, 10) : undefined,
-    year_end: maxYear ? parseInt(maxYear, 10) : undefined,
+    year_start: minYear ? Math.max(parseInt(minYear, 10), YEAR_MIN) : undefined,
+    year_end: maxYear ? Math.min(parseInt(maxYear, 10), YEAR_MAX) : undefined,
     published: published ? published : false,
     facet_by: selectedFacets && selectedFacets.length > 0 ? selectedFacets : [],
   } as SearchQuery;
