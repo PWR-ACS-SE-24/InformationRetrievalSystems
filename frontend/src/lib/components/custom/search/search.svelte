@@ -1,30 +1,81 @@
 <script lang="ts">
-  import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
-  import RangeSlider from "svelte-range-slider-pips";
-  import type { components } from "$lib/generated/backend-openapi";
+  import { goto, onNavigate } from "$app/navigation";
+  import { YEAR_MAX, YEAR_MIN } from "$lib";
   import { Button } from "$lib/components/ui/button/index.js";
   import { Checkbox } from "$lib/components/ui/checkbox/index.js";
-  import { ChevronDown, Search } from "lucide-svelte";
+  import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
   import { Input } from "$lib/components/ui/input/index.js";
   import { Label } from "$lib/components/ui/label/index.js";
+  import type { components } from "$lib/generated/backend-openapi";
+  import { ChevronDown, Search } from "lucide-svelte";
+  import { onMount } from "svelte";
+  import RangeSlider from "svelte-range-slider-pips";
   import { SvelteSet } from "svelte/reactivity";
-  import { goto } from "$app/navigation";
 
   type CategoryModel = components["schemas"]["CategoryModel"];
+  type SearchQuery = components["schemas"]["SearchQuery"];
 
   const { availableSubjects = [] }: { availableSubjects: CategoryModel[] } =
     $props();
 
-  const min = 1986; // extracted from dataset by script in /analysis/test.py that probably works just fine
-  const max = new Date().getFullYear();
-
   let searchQuery = $state("");
   let author = $state("");
   let checked = $state(false);
-  let values = $state([min, max]);
+  let values = $state([YEAR_MIN, YEAR_MAX]);
   let selectedSubjects = $state(new SvelteSet<string>());
   let minYear = $derived(() => values[0]);
   let maxYear = $derived(() => values[1]);
+
+  const parseQueryObj = (query: URLSearchParams): SearchQuery => {
+    try {
+      return {
+        search: query.get("q") || "",
+        author: query.get("author") || "",
+        year_start: Number(query.get("min_year") || YEAR_MIN),
+        year_end: Number(query.get("max_year") || YEAR_MAX),
+        published: query.get("published") === "true",
+        subject: JSON.parse(decodeURIComponent(query.get("subjects") || "[]")),
+        facet_by: [],
+      };
+    } catch (e) {
+      console.error("Failed to parse query parameters:", e);
+      // Fallback to an empty object if parsing fails
+      return {
+        search: "",
+        subject: null,
+        year_start: YEAR_MIN,
+        year_end: YEAR_MAX,
+        published: false,
+        facet_by: null,
+      };
+    }
+  };
+
+  const setFields = (searchOptions: SearchQuery) => {
+    try {
+      searchQuery = searchOptions.search;
+      author = searchOptions.author || "";
+      checked = searchOptions.published;
+      values = [
+        Math.max(searchOptions.year_start, YEAR_MIN),
+        Math.min(searchOptions.year_end, YEAR_MAX),
+      ];
+      selectedSubjects.clear();
+      (searchOptions.subject || []).forEach((sub) => {
+        selectedSubjects.add(sub);
+      });
+    } catch (e) {
+      console.error("Failed to parse search params:", e);
+    }
+  };
+
+  onNavigate(() => {
+    setFields(parseQueryObj(new URLSearchParams(location.search)));
+  });
+
+  onMount(() => {
+    setFields(parseQueryObj(new URLSearchParams(location.search)));
+  });
 
   function isChecked(categoryId: string) {
     const value = selectedSubjects.has(categoryId);
@@ -65,14 +116,17 @@
     }
   }
 
-  function onSearch() {
-    const params = new URLSearchParams();
+  function onSearch(e: Event) {
+    e.preventDefault();
 
+    const params = new URLSearchParams();
     if (searchQuery) params.set("q", searchQuery);
     if (author) params.set("author", author);
     if (checked) params.set("published", "true");
-    if (minYear) params.set("min_year", minYear().toString());
-    if (maxYear) params.set("max_year", maxYear().toString());
+    if (minYear && values[0] != YEAR_MIN)
+      params.set("min_year", minYear().toString());
+    if (maxYear && values[1] != YEAR_MAX)
+      params.set("max_year", maxYear().toString());
 
     if (selectedSubjects.size > 0) {
       const selectedJSON = JSON.stringify(Array.from(selectedSubjects));
@@ -83,8 +137,8 @@
   }
 </script>
 
-<div>
-  <h1 class="text-5xl font-bold mb-6">arXiv paper search</h1>
+<form class="pt-4">
+  <h1 class="text-5xl font-bold mb-6"><a href="/">arXiv paper search</a></h1>
 
   <!-- Search -->
   <div class="relative w-full mb-3">
@@ -170,8 +224,8 @@
       pushy
       first="label"
       last="label"
-      {min}
-      {max}
+      min={YEAR_MIN}
+      max={YEAR_MAX}
       bind:values
     />
   </div>
@@ -187,12 +241,14 @@
   <!-- Button -->
   <div class="flex justify-center mt-4">
     {#if searchQuery}
-      <Button class="px-8 text-xl" on:click={onSearch}>Search</Button>
+      <Button class="px-8 text-xl" on:click={onSearch} type="submit"
+        >Search</Button
+      >
     {:else}
       <Button class="px-8 text-xl" disabled>Search</Button>
     {/if}
   </div>
-</div>
+</form>
 
 <style>
   :root {
