@@ -35,67 +35,37 @@
 
 ## Screenshots 📸
 
-<center>
 Main page
-
 ![Main page](./docs/img/main-page.png)
-</center>
 
-<center>
 Search page
-
 ![Search page](./docs/img/search-page.png)
-</center>
 
-<center>
 Categories
-
 ![Categories](./docs/img/dropdown.png)
-</center>
 
-<center>
 Faceted navigation
-
 ![Faceted1](./docs/img/facet1.png)
 ![Faceted2](./docs/img/facet2.png)
-</center>
 
-<center>
 Papers per year
-
 ![Faceted2](./docs/img/years.png)
-</center>
 
 ## Diagrams 📝
 
-<center>
 Architecture diagram
-
 ![Architecture](./docs/img/architecture.drawio.png)
-</center>
 
-<center>
 Component diagram
-
 ![Component](./docs/img/component.drawio.png)
-</center>
 
 ## Benchmarks 📈
 
-<center>
 Ram usage
-
 ![Ram](./docs/img/ram-1.png)
-</center>
 
-<center>
 Indexing time
-
 ![Czas](./docs/img/czas-1.png)
-</center>
 
-<center>
 Retrieval times
-
 ![Times](./docs/img/times-1.png)
-</center>
